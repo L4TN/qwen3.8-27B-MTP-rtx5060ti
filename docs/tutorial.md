@@ -1,8 +1,8 @@
 # Tutorial: Qwen3.8-27B UD-IQ4_XS + MTP n=3 + Q8 KV em RTX 5060 Ti 16GB (Windows 11)
 
-> Validado em 22/08/2026: RTX 5060 Ti 16GB + Driver 610.88 + CUDA 13.3 + llama.cpp b10586 + `C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf` → **52.17 t/s prompt / 44.79 t/s geração, draft acceptance 0.59, VRAM 15.8GB**
+> Validado em 22/08/2026: RTX 5060 Ti 16GB + Driver 610.88 + CUDA 13.3 + llama.cpp b10586 + `C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf` → **45K contexto: 47.91 t/s prompt / 37.09 t/s geração, draft acceptance 0.55 mean 2.66, VRAM 15.9GB (15963 MiB)** — também validado 32K (52.17/44.79 t/s, 15.5GB) e 40K (15.6GB)
 
-Config recomendada pelo `Bellatorius01` para coding agent (mais qualidade que IQ3_XXS, 2x speedup com MTP).
+Config recomendada pelo `Bellatorius01` para coding agent (mais qualidade que IQ3_XXS, 2x speedup com MTP). 45K é o máximo que mantém IQ4_XS + Q8_0 dentro de 16GB.
 
 Baseado na discussão #26: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/discussions/26
 
@@ -89,7 +89,7 @@ dir C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf
 
 ## 3. Config IQ4_XS + Q8 KV + MTP n=3 (copie e cole)
 
-> Testada neste PC em `C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf` — 32K contexto, `parallel=1`, `Flash-Attn on`, `reasoning medium`
+> Testada neste PC em `C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf` — **45K contexto (45056)**, `parallel=1`, `Flash-Attn on`, `reasoning medium`. Também validada em 32K (15.5GB) e 40K (15.6GB) — troque apenas `--ctx-size`.
 
 ```powershell
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS='{"preserve-thinking":true,"reasoning_effort":"medium"}'
@@ -100,7 +100,7 @@ C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf `
  --spec-type draft-mtp --spec-draft-n-max 3 `
  --n-gpu-layers all --threads 6 `
  --fit off --load-mode none --no-warmup --flash-attn on `
- --ctx-size 32768 --parallel 1 `
+ --ctx-size 45056 --parallel 1 `
  --cache-type-k q8_0 --cache-type-v q8_0 `
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `
@@ -110,26 +110,28 @@ C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf `
 
 **Alternativa com -hf (se não baixou manual):**
 ```powershell
-C:\llamacpp\llama-server.exe -hf unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --ctx-size 32768 --cache-type-k q8_0 --cache-type-v q8_0 --host 127.0.0.1 --port 1234
+C:\llamacpp\llama-server.exe -hf unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --ctx-size 45056 --cache-type-k q8_0 --cache-type-v q8_0 --host 127.0.0.1 --port 1234
 ```
 
-### Resultado medido 22/08/2026 neste PC
+### Resultado medido 22/08/2026 neste PC — 45K Q8
 
 ```
 Modelo: C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf (14.25GB)
-VRAM: 15858 MiB / 16311 MiB (pico, sem spill para RAM)
-prompt eval: 52.17 t/s (22 tokens / 421ms)
-eval:       44.79 t/s (300 tokens / 6676ms)
-draft acceptance: 0.59 (191/322) mean 2.77  acc/pos (0.778, 0.565, 0.426)
-graphs reused: 105
-# sem MTP seria ~26 t/s → 2x speedup, igual ao Bellatorius01:
-#  2.5K: 54.1 t/s | 14.2K: 50.8 | 18.1K: 51.3 | 25.4K: 40.8
+VRAM: 15963 MiB / 16311 MiB (15.9GB pico, 97.8% de 16GB)
+KV buffer: 1496 MiB (45056 cells, Q8_0), RS buffer 598.50 MiB
+prompt eval: 47.91 t/s (25 tokens / 521ms)
+eval:       37.09 t/s (350 tokens / 9409ms)
+draft acceptance: 0.55 (217/393) mean 2.66  acc/pos (0.771, 0.519, 0.366)
+# Também validado:
+#  32K Q8: 15843 MiB (15.5GB) → 52.17 t/s prompt / 44.79 t/s geração
+#  40K Q8: 15961 MiB (15.6GB) → similar
+# sem MTP seria ~26 t/s → 1.7x speedup mesmo em 45K
 ```
 
 ### Notas
-- `parallel=1` obrigatório para 32K/94K não estourar VRAM
+- `parallel=1` obrigatório para 32K/45K/94K não estourar VRAM
 - `--fit off` impede o llama de reduzir ctx automaticamente
-- `Q8_0 KV` gasta mais VRAM que `Q4_0` mas mantém qualidade IQ4_XS (15.8GB ainda cabe em 16GB)
+- `Q8_0 KV` gasta mais VRAM que `Q4_0` mas mantém qualidade IQ4_XS — 45K Q8 ainda cabe (15.9GB). Para >45K, troque para Q4_0
 - `reasoning-effort medium` — padrão `xhigh` overthinka e com `max_tokens=3000` não responde (use 6000+)
 - MTP já dentro do GGUF (`nextn_predict_layers=1`, `blk.64.nextn.*`), não precisa draft separado
 
@@ -169,7 +171,7 @@ Get-Process llama-server | Stop-Process -Force
 |---|---|
 | 16-22 t/s com MTP | Build Vulkan — reinstale ZIP `cuda-13.3` |
 | `CUDA error` | Atualize driver ≥610.88 (`nvidia-smi` CUDA 13.3) |
-| `out of memory` | VRAM estourou — confirme `C:\modelos` em SSD, feche apps, mantenha `parallel=1`, reduza `ctx-size` |
+| `out of memory` em 45K | Feche apps com VRAM, mantenha `parallel=1`. Acima de 45K Q8, use `--cache-type-k q4_0 --cache-type-v q4_0` |
 | Resposta vazia | `reasoning medium` + `max_tokens` pequeno — aumente para 6000+ |
 | Download 0 bytes | Firewall — teste `Invoke-WebRequest https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/config.json` |
 
@@ -183,4 +185,4 @@ Get-Process llama-server | Stop-Process -Force
 - Hackin085 — fix `--device CUDA0` + diagnóstico Vulkan
 - llama.cpp: https://github.com/ggml-org/llama.cpp
 
-Atualizado em 22/08/2026 — config IQ4_XS validada em `C:\modelos` (RTX 5060 Ti, b10586).
+Atualizado em 22/08/2026 — config IQ4_XS 45K Q8 validada em `C:\modelos` (RTX 5060 Ti 15.9GB pico, 47.91/37.09 t/s, b10586). 32K e 40K também validados. Limite IQ3_XXS em teste para ~15.9GB.

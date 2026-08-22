@@ -54,17 +54,17 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 | **Use case** | Coding agent, reasoning, production quality | Long-document analysis, RAG, whole-repo ingestion |
 | **Model file** | `Qwen3.8-27B-UD-IQ4_XS.gguf` (14.25 GB) | `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9 GB) |
 | **Download** | [IQ4_XS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) | [IQ3_XXS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
-| **Context** | 32,768 tokens | 94,208 tokens (92K usable) |
+| **Context** | 45,056 tokens | 94,208 tokens (92K usable) |
 | **KV cache** | Q8_0 | Q4_0 |
 | **Flash Attention** | on | on |
-| **VRAM peak** | 15.8 GB / 16 GB | 14.1 GB / 16 GB |
-| **Prompt eval** | 52.17 t/s (22 tok / 421 ms) | 54.54 t/s (19 tok / 348 ms) |
-| **Generation** | 44.79 t/s (300 tok) | 60.14 t/s (87 tok) |
-| **MTP acceptance** | 0.59 (191/322) | 0.79 (62/78) |
+| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 14.1 GB / 16.3 GB |
+| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 54.54 t/s (19 tok / 348 ms) |
+| **Generation** | 37.09 t/s (350 tok) | 60.14 t/s (87 tok) |
+| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.79 (62/78) |
 | **Quality** | Highest | High |
 
-- Configuration A prioritizes output quality (IQ4_XS) within 32K, ideal for 99% of agent workloads.
-- Configuration B prioritizes context length (94K) with slightly lower quantization, suitable when the full prompt must exceed 32K.
+- Configuration A prioritizes output quality (IQ4_XS) at 45K, validated at 32K (15.5 GB, 52.17/44.79 t/s), 40K (15.6 GB) and 45K (15.9 GB). 45K is the maximum that maintains IQ4_XS + Q8_0 quality without exceeding 16 GB — ideal for production agents needing extended context.
+- Configuration B prioritizes context length (94K) with slightly lower quantization, suitable when the full prompt must exceed 45K. Headroom to ~15.9 GB allows further scaling (see limit tests).
 
 Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`.
 
@@ -112,11 +112,12 @@ http://127.0.0.1:1234
 
 ## Manual Commands
 
-**Configuration A — High Precision (32K, Q8):**
+**Configuration A — High Precision (45K, Q8) — validated 2026-08-22:**
 
 ```powershell
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS='{"preserve-thinking":true,"reasoning_effort":"medium"}'
-C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 32768 --parallel 1 --cache-type-k q8_0 --cache-type-v q8_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234
+C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 45056 --parallel 1 --cache-type-k q8_0 --cache-type-v q8_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234
+# Also validated at 32768 (15.5 GB) and 40960 (15.6 GB) — same command with --ctx-size 32768/40960
 ```
 
 **Configuration B — Extended Context (94K, Q4):**
@@ -169,8 +170,8 @@ Get-Process llama-server | Stop-Process -Force
 **This repository, RTX 5060 Ti, b10586:**
 
 ```
-A — IQ4_XS Q8  32K : prompt 52.17 t/s | eval 44.79 t/s | 15.8 GB | acceptance 0.59 mean 2.77
-B — IQ3_XXS Q4 94K : prompt 54.54 t/s | eval 60.14 t/s | 14.1 GB | acceptance 0.79 mean 3.38
+A — IQ4_XS Q8  45K : prompt 47.91 t/s | eval 37.09 t/s | 15.9 GB (15963 MiB) | acceptance 0.55 mean 2.66 | also 32K 15.5 GB 52.17/44.79 t/s and 40K 15.6 GB validated
+B — IQ3_XXS Q4 94K : prompt 54.54 t/s | eval 60.14 t/s | 14.1 GB | acceptance 0.79 mean 3.38 | limit tests to ~15.9 GB in progress
 ```
 
 **References:**
