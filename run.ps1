@@ -9,15 +9,15 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 Write-Host ""
 Write-Host "Select mode:" -ForegroundColor Cyan
 Write-Host "  [1] High Precision - IQ4_XS 45K Q8  (max quality, 47.9/37.1 t/s, 15.9GB) - Recommended" -ForegroundColor Green
-Write-Host "  [2] Extended Context - IQ3_XXS 94K Q4 (max context, 54.5/60.1 t/s, 14.1GB)" -ForegroundColor Yellow
-Write-Host "      Also validated: IQ4_XS 32K 15.5GB and 40K 15.6GB with same Q8"
+Write-Host "  [2] Extended Context - IQ3_XXS 150K Q4 (sweet spot 15.0GB, 38/49 t/s, max 250K fits)" -ForegroundColor Yellow
+Write-Host "      Also validated: IQ4_XS 32K 15.5GB 52/44 t/s, IQ3 94K 13.5GB, 250K 15.5GB max"
 Write-Host ""
 $choice = Read-Host "Enter 1 or 2 (default 1)"
 
 if ($choice -eq "2") {
     $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
-    $CTX = "94208"; $KVK = "q4_0"; $KVV = "q4_0"
-    $DESC = "Extended Context - IQ3_XXS 94K Q4"
+    $CTX = "150000"; $KVK = "q4_0"; $KVV = "q4_0"
+    $DESC = "Extended Context - IQ3_XXS 150K Q4 (sweet spot, 15.0GB)"
 } else {
     $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf"
     $CTX = "45056"; $KVK = "q8_0"; $KVV = "q8_0"
