@@ -185,4 +185,32 @@ Get-Process llama-server | Stop-Process -Force
 - Hackin085 — fix `--device CUDA0` + diagnóstico Vulkan
 - llama.cpp: https://github.com/ggml-org/llama.cpp
 
-Atualizado em 22/08/2026 — config IQ4_XS 45K Q8 validada em `C:\modelos` (RTX 5060 Ti 15.9GB pico, 47.91/37.09 t/s, b10586). 32K e 40K também validados. Limite IQ3_XXS em teste para ~15.9GB.
+---
+
+## 7. Apêndice: Limite do IQ3_XXS até 15.9GB (mesma RTX 5060 Ti)
+
+> Modelo `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9GB, 10019 MiB em GPU) + Q4_0 KV + MTP n=3 — mesmo PC, b10586
+
+```
+94K  Q4: 13873 MiB (13.5GB) KV 1656 MiB | prompt 36.63 t/s | gen 44.36 t/s | acc 0.54 mean 2.57
+110K Q4: 14308 MiB (14.0GB) KV 1935 MiB | prompt 34.14 t/s | gen 45.07 t/s | acc 0.53 mean 2.57
+130K Q4: 14775 MiB (14.4GB) KV 2286 MiB | prompt 41.04 t/s | gen 54.47 t/s | acc 0.70 mean 3.11
+150K Q4: 15323 MiB (15.0GB) KV 2637 MiB | prompt 38.10 t/s | gen 49.23 t/s | acc 0.63 mean 2.90 — SWEET SPOT
+170K Q4: 15872 MiB (15.5GB) KV 2992 MiB | prompt  2.84 t/s | gen 44.95 t/s | acc 0.55 — prompt degrada
+190K Q4: 15835 MiB (15.5GB) KV 3343 MiB | prompt  2.89 t/s | gen 43.18 t/s
+210K Q4: 15821 MiB (15.5GB) KV 3694 MiB | prompt  2.89 t/s | gen 36.88 t/s
+230K Q4: 15846 MiB (15.5GB) KV 4045 MiB | prompt  2.86 t/s | gen 42.99 t/s
+250K Q4: 15911 MiB (15.5GB) fits — max validado
+262K Q4: OOM / crash — acima do limite de alocação
+```
+
+**Conclusão:** 150K é o sweet spot para IQ3_XXS Q4 (15.0GB, mantém 38/49 t/s). 94K-150K mantém performance; acima de 150K, `prompt eval` cai 10x (2.9 t/s) por custo quadrático do attention, mas `gen` mantém ~43 t/s graças ao MTP. RTX 5060 Ti 16GB suporta até 250K em Q4 antes de 15.9GB.
+
+Comando para 150K (recomendado extended):
+
+```powershell
+$env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS='{"preserve-thinking":true,"reasoning_effort":"medium"}'
+C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 150000 --parallel 1 --cache-type-k q4_0 --cache-type-v q4_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234
+```
+
+Atualizado em 22/08/2026 — IQ4_XS 45K Q8 (15.9GB 47.91/37.09) + IQ3_XXS 94K-250K limit tests em `C:\modelos` (RTX 5060 Ti b10586). Sweet spots: IQ4 45K Q8 para qualidade, IQ3 150K Q4 para contexto.
