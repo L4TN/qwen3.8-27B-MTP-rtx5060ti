@@ -1,0 +1,24 @@
+# Modelos - nao commitar (14GB)
+*.gguf
+*.bin
+/C:\modelos/
+D:\models/
+
+# Cache
+.huggingface/
+.hf_cache/
+
+# Logs llama.cpp
+server.log
+server.err
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.tmp
