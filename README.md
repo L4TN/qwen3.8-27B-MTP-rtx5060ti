@@ -54,13 +54,13 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 | **Use case** | Coding agent, reasoning, production quality | Long-document analysis, RAG, whole-repo ingestion |
 | **Model file** | `Qwen3.8-27B-UD-IQ4_XS.gguf` (14.25 GB) | `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9 GB) |
 | **Download** | [IQ4_XS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) | [IQ3_XXS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
-| **Context** | 45,056 tokens | 94K – 250K (validated to 15.9 GB) |
+| **Context** | 45,056 tokens | 150,000 tokens (sweet spot) |
 | **KV cache** | Q8_0 | Q4_0 |
 | **Flash Attention** | on | on |
-| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 13.5 GB @94K → 15.5 GB @250K |
-| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 36.6 @94K → 38.1 @150K → 2.9 @170K+ |
-| **Generation** | 37.09 t/s (350 tok) | 44.4 @94K → 49.2 @150K → 43 @250K |
-| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.54–0.70 mean 2.6–3.1 |
+| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 15.0 GB / 16.3 GB (15323 MiB) |
+| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 38.10 t/s (19 tok / 498 ms) |
+| **Generation** | 37.09 t/s (350 tok) | 49.23 t/s (60 tok) |
+| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.63 (38/60) mean 2.90 |
 | **Quality** | Highest | High |
 
 - Configuration A prioritizes output quality (IQ4_XS) at 45K, validated at 32K (15.5 GB, 52.17/44.79 t/s), 40K (15.6 GB) and 45K (15.9 GB). 45K is the maximum that maintains IQ4_XS + Q8_0 quality without exceeding 16 GB — ideal for production agents needing extended context.
