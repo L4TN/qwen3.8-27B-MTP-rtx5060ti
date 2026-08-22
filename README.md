@@ -54,17 +54,17 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 | **Use case** | Coding agent, reasoning, production quality | Long-document analysis, RAG, whole-repo ingestion |
 | **Model file** | `Qwen3.8-27B-UD-IQ4_XS.gguf` (14.25 GB) | `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9 GB) |
 | **Download** | [IQ4_XS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) | [IQ3_XXS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
-| **Context** | 45,056 tokens | 94,208 tokens (92K usable) |
+| **Context** | 45,056 tokens | 94K – 250K (validated to 15.9 GB) |
 | **KV cache** | Q8_0 | Q4_0 |
 | **Flash Attention** | on | on |
-| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 14.1 GB / 16.3 GB |
-| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 54.54 t/s (19 tok / 348 ms) |
-| **Generation** | 37.09 t/s (350 tok) | 60.14 t/s (87 tok) |
-| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.79 (62/78) |
+| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 13.5 GB @94K → 15.5 GB @250K |
+| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 36.6 @94K → 38.1 @150K → 2.9 @170K+ |
+| **Generation** | 37.09 t/s (350 tok) | 44.4 @94K → 49.2 @150K → 43 @250K |
+| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.54–0.70 mean 2.6–3.1 |
 | **Quality** | Highest | High |
 
 - Configuration A prioritizes output quality (IQ4_XS) at 45K, validated at 32K (15.5 GB, 52.17/44.79 t/s), 40K (15.6 GB) and 45K (15.9 GB). 45K is the maximum that maintains IQ4_XS + Q8_0 quality without exceeding 16 GB — ideal for production agents needing extended context.
-- Configuration B prioritizes context length (94K) with slightly lower quantization, suitable when the full prompt must exceed 45K. Headroom to ~15.9 GB allows further scaling (see limit tests).
+- Configuration B prioritizes context length (IQ3_XXS). Validated limit tests to 15.9 GB (see below): 94K 13.5 GB, 110K 14.0 GB, 130K 14.4 GB, **150K 15.0 GB (sweet spot, 38/49 t/s)**, 170K+ 15.5 GB but prompt drops to 2.9 t/s. Max tested 250K 15.5 GB fits. Model supports 262K training limit but 262K OOMs.
 
 Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`.
 
@@ -120,11 +120,18 @@ C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf --device C
 # Also validated at 32768 (15.5 GB) and 40960 (15.6 GB) — same command with --ctx-size 32768/40960
 ```
 
-**Configuration B — Extended Context (94K, Q4):**
+**Configuration B — Extended Context (IQ3_XXS Q4) — limit tests 2026-08-22:**
 
 ```powershell
+# 94K baseline (13.5 GB)
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS='{"preserve-thinking":true,"reasoning_effort":"medium"}'
 C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 94208 --parallel 1 --cache-type-k q4_0 --cache-type-v q4_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234
+
+# 150K sweet spot (15.0 GB, best balance — recommended for extended context)
+# --ctx-size 150000  # KV 2637 MiB, prompt 38.1 t/s, gen 49.2 t/s
+
+# 250K max validated (15.5 GB, 15911 MiB — fits but prompt 2.9 t/s beyond 150K)
+# --ctx-size 250000  # KV ~4400 MiB, gen still ~43 t/s, prompt degrades due to attention
 ```
 
 Notes:
@@ -170,8 +177,16 @@ Get-Process llama-server | Stop-Process -Force
 **This repository, RTX 5060 Ti, b10586:**
 
 ```
-A — IQ4_XS Q8  45K : prompt 47.91 t/s | eval 37.09 t/s | 15.9 GB (15963 MiB) | acceptance 0.55 mean 2.66 | also 32K 15.5 GB 52.17/44.79 t/s and 40K 15.6 GB validated
-B — IQ3_XXS Q4 94K : prompt 54.54 t/s | eval 60.14 t/s | 14.1 GB | acceptance 0.79 mean 3.38 | limit tests to ~15.9 GB in progress
+A — IQ4_XS Q8  45K : prompt 47.91 t/s | eval 37.09 t/s | 15.9 GB (15963 MiB) | acc 0.55 mean 2.66 | also 32K 15.5 GB 52.17/44.79 and 40K 15.6 validated
+B — IQ3_XXS Q4  94K : prompt 36.63 t/s | eval 44.36 t/s | 13.5 GB (13873 MiB) | KV 1656 MiB
+B — IQ3_XXS Q4 110K : prompt 34.14 t/s | eval 45.07 t/s | 14.0 GB (14308 MiB) | KV 1935 MiB
+B — IQ3_XXS Q4 130K : prompt 41.04 t/s | eval 54.47 t/s | 14.4 GB (14775 MiB) | KV 2286 MiB
+B — IQ3_XXS Q4 150K : prompt 38.10 t/s | eval 49.23 t/s | 15.0 GB (15323 MiB) | KV 2637 MiB — SWEET SPOT
+B — IQ3_XXS Q4 170K : prompt  2.84 t/s | eval 44.95 t/s | 15.5 GB (15872 MiB) | KV 2992 MiB — prompt degrades, gen ok
+B — IQ3_XXS Q4 190K : prompt  2.89 t/s | eval 43.18 t/s | 15.5 GB (15835 MiB) | KV 3343 MiB
+B — IQ3_XXS Q4 210K : prompt  2.89 t/s | eval 36.88 t/s | 15.5 GB (15821 MiB) | KV 3694 MiB
+B — IQ3_XXS Q4 230K : prompt  2.86 t/s | eval 42.99 t/s | 15.5 GB (15846 MiB) | KV 4045 MiB
+B — IQ3_XXS Q4 250K : 15.5 GB (15911 MiB) fits — max validated; 262K OOM/crash
 ```
 
 **References:**
