@@ -12,7 +12,7 @@
 
 Dois quants validados, dois KVs testados, todos os contextos com VRAM, prompt e geração documentados. Escolha qualidade máxima ou contexto gigante e reproduza com um clique.
 
-## Ambiente Validado
+## Ambiente
 
 | Componente | Versão |
 |---|---|
@@ -33,7 +33,7 @@ VRAM total: **16311 MiB**. Limite estável: **~15.9 GB (97-98%)**.
 | UD-IQ4_XS | `Qwen3.8-27B-UD-IQ4_XS.gguf` | 14.25 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) |
 | UD-IQ3_XXS | `Qwen3.8-27B-UD-IQ3_XXS.gguf` | 10.9 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
 
-Salvos em `C:\modelos` (fora do repo).
+Exemplo: `C:\modelos` (fora do repo, como usado nos testes).
 
 ## Resultados
 
@@ -85,7 +85,7 @@ Salvos em `C:\modelos` (fora do repo).
 
 Todos os comandos usam `--cache-type-k/v` correspondente e demais flags padrão do repo.
 
-## Instalação — Receita de Bolo
+## Instalação
 
 **1. Verifique o CUDA**
 
@@ -105,7 +105,7 @@ Expand-Archive cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamac
 .\llama-server.exe --version
 ```
 
-Tem que mostrar `GGML_CUDA=1`. Se mostrar `Vulkan`, baixou o ZIP errado.
+Valide com `.\llama-server.exe --version` — deve constar `GGML_CUDA=1`. Se constar `Vulkan`, o build é incorreto e deve ser substituído pelo pacote CUDA 13.3.
 
 **3. Baixe os modelos**
 

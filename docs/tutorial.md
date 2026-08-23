@@ -21,7 +21,7 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 | UD-IQ4_XS | `Qwen3.8-27B-UD-IQ4_XS.gguf` | 14.25 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) |
 | UD-IQ3_XXS | `Qwen3.8-27B-UD-IQ3_XXS.gguf` | 10.9 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
 
-Stored in `C:\modelos` (outside repo).
+Example: `C:\modelos` (outside repo, as used in tests).
 
 ## Results
 
@@ -97,7 +97,7 @@ Expand-Archive cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamac
 .\llama-server.exe --version
 ```
 
-Must show `GGML_CUDA=1`. If `Vulkan`, wrong ZIP.
+Verify with `.\llama-server.exe --version` — output must contain `GGML_CUDA=1`. If it shows `Vulkan`, the build is incorrect and must be replaced with the CUDA 13.3 package.
 
 ### 3. Download models
 
