@@ -1,16 +1,19 @@
-# Scripts — Post-install (safe market defaults)
+# Scripts — Post-install (systematic grid)
 
 Use after installing `llama.cpp` to `C:\llamacpp` and models to `C:\modelos` (see main README).
 
 | Script | Purpose | VRAM | Command |
 |---|---|---|---|
-| `start-iq4-32k.ps1` / `.bat` | **High Precision — SAFE** — IQ4_XS 32K Q8 (market standard, 15.5GB) | 15.5 GB / 16.3 GB (15843 MiB) — also 45K 15.9GB validated | `powershell -ExecutionPolicy Bypass -File scripts\start-iq4-32k.ps1` |
-| `start-iq3-128k.ps1` / `.bat` | **Extended Context — SAFE** — IQ3_XXS 128K Q4 (market standard, ~14.3GB) | 14.3 GB / 16.3 GB (~14650 MiB) — also 150K 15.0GB sweet spot, 250K max | `powershell -ExecutionPolicy Bypass -File scripts\start-iq3-128k.ps1` |
+| `start-iq4-32k-q8.ps1` / `.bat` | **High Precision — SAFE** — IQ4_XS 32K Q8 | 15705 MiB 96.3% 92/52 — also **45K limite** 15860 MiB 94/45 | `powershell -ExecutionPolicy Bypass -File scripts\start-iq4-32k-q8.ps1` |
+| `start-iq4-90k-q4.ps1` / `.bat` | **High Precision — MAX** — IQ4_XS 90K Q4 **limite** | 15854 MiB 97.2% 107/46 — 100K colapsa | `powershell -ExecutionPolicy Bypass -File scripts\start-iq4-90k-q4.ps1` |
+| `start-iq3-128k.ps1` / `.bat` | **Extended Context — SAFE** — IQ3_XXS 128K Q4 | 14736 MiB 90.3% 80/41 — also 64K/100K/148K market | `powershell -ExecutionPolicy Bypass -File scripts\start-iq3-128k.ps1` |
+| `start-iq3-160k-q4.ps1` / `.bat` | **Extended Context — MAX** — IQ3_XXS 160K Q4 **limite** | 15528 MiB 95.2% 85/57 — 170K colapsa prompt | `powershell -ExecutionPolicy Bypass -File scripts\start-iq3-160k-q4.ps1` |
+| `start-iq3-100k-q8.ps1` / `.bat` | **Q8 MAX** — IQ3_XXS 100K Q8 **limite** | 15452 MiB 94.7% 84/57 — 110K colapsa | `powershell -ExecutionPolicy Bypass -File scripts\start-iq3-100k-q8.ps1` |
 | `clear-vram.ps1` / `.bat` | **Clear VRAM** — kills `llama-server.exe` and frees GPU | — | `powershell -ExecutionPolicy Bypass -File scripts\clear-vram.ps1` |
 
 All `.bat` are double-clickable; `.ps1` require `ExecutionPolicy Bypass`.
 
-Why safe? 32K and 128K are the most common market context windows (habitually seen), leave headroom on 16.3GB and keep prompt eval fast (52/38 t/s). Extremes 45K (15.9GB) and 150K (15.0GB) are validated and documented in main README/Benchmarks as sweet spots.
+Grid sistemático `32K/64K/100K/128K/148K` + `limite` + `colapso` validado via `tools/bench-grid-v2.ps1` (`chat/completions 36tok/70tok`, `clear-vram` entre casos). 32K e 128K são âncoras de mercado seguras, com headroom em 16.3GB. Limites reais: IQ4 Q8 45K (50K colapsa), IQ4 Q4 90K (100K colapsa), IQ3 Q4 160K (170K colapsa prompt), IQ3 Q8 100K (110K colapsa).
 
 **Typical flow:**
 ```powershell

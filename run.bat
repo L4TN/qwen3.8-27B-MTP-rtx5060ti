@@ -8,9 +8,9 @@ if not exist "%LLAMA%" echo ERROR: %LLAMA% not found && pause && exit /b 1
 nvidia-smi
 echo ""
 echo Select mode:
-echo   [1] High Precision - IQ4_XS 45K Q8  (max quality, 47.9/37.1 t/s, 15.9GB) - Recommended
-echo   [2] Extended Context - IQ3_XXS 150K Q4 (sweet spot 15.0GB, 38/49 t/s, max 250K fits)
-echo       Also validated: IQ4 32K 15.5GB 52/44, IQ3 94K 13.5GB, 250K 15.5GB max
+echo   [1] High Precision - IQ4_XS 45K Q8  (limite 15860 MiB 94/45 t/s) - Recommended
+echo   [2] Extended Context - IQ3_XXS 160K Q4 (limite 15528 MiB 85/57 t/s, max 250K exp)
+echo       Also validated: IQ4 Q4 90K limite 107/46, IQ3 Q8 100K limite 84/57, 32K/64K/100K/128K/148K market
 echo ""
 set /p choice="Enter 1 or 2 (default 1): "
 if "%choice%"=="2" goto canhao
@@ -25,10 +25,10 @@ goto run
 
 :canhao
 set MODEL=C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf
-set CTX=150000
+set CTX=160000
 set KVK=q4_0
 set KVV=q4_0
-echo Starting Extended Context 150K on http://127.0.0.1:1234
+echo Starting Extended Context 160K limit on http://127.0.0.1:1234
 
 :run
 if not exist "%MODEL%" echo ERROR: %MODEL% not found && pause && exit /b 1

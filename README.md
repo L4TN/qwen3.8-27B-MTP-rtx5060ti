@@ -21,9 +21,9 @@ Dois quants validados, dois KVs testados, todos os contextos com VRAM, prompt e 
 | CUDA | 13.3 (UMD) |
 | OS | Windows 11 22H2, PowerShell 5.1 |
 | llama.cpp | b10586 (`GGML_CUDA=1`) |
-| Data | 2026-08-22 |
+| Data | 2026-08-22 (revalidado 2026-08-22 em grid sistemático) |
 | Placa-mãe | ASUS PRIME B350M (PCIe 3.0) |
-| Método | MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch 512`, `24 tok prompt / 70 tok gen` |
+| Método | MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch 512`, `chat/completions 36 tok prompt / 70 tok gen`, `clear-vram` entre casos |
 
 > GPU ASUS PCIe 5.0 operando em PCIe 3.0 x16 — banda limitada a ~15.75 GB/s. Números medidos refletem essa condição; em PCIe 4.0/5.0 a banda é maior.
 
@@ -38,47 +38,62 @@ VRAM total: **16311 MiB**. Limite estável: **~15.9 GB (97-98%)**.
 
 Exemplo: `C:\modelos` (fora do repo, como usado nos testes).
 
-## Resultados
+## Metodologia (acadêmica)
+
+Grid sistemático em números de mercado `32K/64K/100K/128K/148K` + `limite` + `colapso +5K/+10K`. Procedimento por caso: `clear-vram` (kill `llama-server` + `nvidia-smi`), subida com `--fit off --load-mode none --no-warmup`, poll `http://127.0.0.1:1234/health` até 200s, captura `nvidia-smi memory.used` + `KV buffer size` do log (`CUDA0 KV ...` + draft), `POST /v1/chat/completions` com `messages=[user: "Explain quantum entanglement..."]`, `max_tokens=70`, `temperature=1`, `top_p=0.95`, captura `timings.prompt_n/prompt_ms/prompt_per_second` e `predicted_per_second` + `draft_n/draft_n_accepted`. Critério de colapso: `prompt <15 t/s` ou `gen <15 t/s` (attention quadrático). Logs brutos em `C:\Temp\bench\bench_*.log(.err)` e CSV `bench-results-v2.csv`. Todos os `start-*.ps1` reproduzem exatamente os mesmos flags.
+
+## Resultados (revalidados — grid sistemático)
 
 ### IQ4_XS — 14.25 GB
 
-**Q8_0**
+**Q8_0** — KV q8_0 (precisão)
 
-| Contexto | VRAM | % | Prompt | Geração | Reproduzir |
-|---|---|---|---|---|---|
-| 32K | 15843 MiB | 97.1% | 44.81 t/s | 50.72 t/s | [`start-iq4-32k-q8.ps1`](scripts/start-iq4-32k-q8.ps1) |
-| **45K limite** | **15963 MiB** | **97.8%** | **52.36 t/s** | **46.14 t/s** | [`start-iq4-45k-q8.ps1`](scripts/start-iq4-45k-q8.ps1) |
+| Contexto | VRAM | % | Prompt | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| 32K | 15705 MiB | 96.3% | 92.73 t/s | 52.68 t/s | 72.3% | [`start-iq4-32k-q8.ps1`](scripts/start-iq4-32k-q8.ps1) |
+| **45K limite** | **15860 MiB** | **97.2%** | **94.85 t/s** | **45.55 t/s** | **76.2%** | [`start-iq4-45k-q8.ps1`](scripts/start-iq4-45k-q8.ps1) |
+| 50K | 15750 MiB | 96.6% | 27.86 t/s | 10.75 t/s | 55.8% | colapso — além do limite (`start-iq4-50k-q8.ps1`, 64K também colapsa 25/9) |
 
-**Q4_0**
+**Q4_0** — KV q4_0 (contexto)
 
-| Contexto | VRAM | % | Prompt | Geração | Reproduzir |
-|---|---|---|---|---|---|
-| 32K | 15347 MiB | 94.1% | 60.60 t/s | 48.94 t/s | [`start-iq4-32k-q4.ps1`](scripts/start-iq4-32k-q4.ps1) |
-| 45K | 15585 MiB | 95.5% | 53.45 t/s | 48.32 t/s | [`start-iq4-45k-q4.ps1`](scripts/start-iq4-45k-q4.ps1) |
-| 60K | 15891 MiB | 97.4% | 50.87 t/s | 42.67 t/s | [`start-iq4-60k-q4.ps1`](scripts/start-iq4-60k-q4.ps1) |
-| 70K | 15851 MiB | 97.2% | 54.66 t/s | 43.54 t/s | [`start-iq4-70k-q4.ps1`](scripts/start-iq4-70k-q4.ps1) |
-| **80K limite** | **15844 MiB** | **97.1%** | **44.07 t/s** | **43.85 t/s** | [`start-iq4-80k-q4.ps1`](scripts/start-iq4-80k-q4.ps1) |
-| 90K | 15914 MiB | 97.6% | 28.10 t/s | 10.27 t/s | colapso — além do limite |
+| Contexto | VRAM | % | Prompt | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| 32K | 15105 MiB | 92.6% | 110.37 t/s | 46.18 t/s | 60.3% | [`start-iq4-32k-q4.ps1`](scripts/start-iq4-32k-q4.ps1) |
+| 64K | 15865 MiB | 97.3% | 104.57 t/s | 41.82 t/s | 55.3% | [`start-iq4-64k-q4.ps1`](scripts/start-iq4-64k-q4.ps1) |
+| 80K | 15842 MiB | 97.1% | 107.90 t/s | 41.32 t/s | 60.3% | [`start-iq4-80k-q4.ps1`](scripts/start-iq4-80k-q4.ps1) |
+| **90K limite** | **15854 MiB** | **97.2%** | **107.26 t/s** | **46.28 t/s** | **72.3%** | [`start-iq4-90k-q4.ps1`](scripts/start-iq4-90k-q4.ps1) |
+| 100K | 15856 MiB | 97.2% | 23.07 t/s | 8.25 t/s | 77.4% | colapso — além do limite (`start-iq4-100k-q4.ps1`) |
+
+> Limite IQ4 Q4 subiu de 80K → 90K após revalidação sistemática; Q8 mantém 45K.
 
 ### IQ3_XXS — 10.9 GB
 
-**Q4_0**
+**Q4_0** — KV q4_0 (contexto gigante, mercado)
 
-| Contexto | VRAM | % | Prompt | Geração | Reproduzir |
-|---|---|---|---|---|---|
-| 94K | 13873 MiB | 85.1% | 36.63 t/s | 44.36 t/s | [`start-iq3-94k-q4.ps1`](scripts/start-iq3-94k-q4.ps1) |
-| 110K | 14308 MiB | 87.7% | 34.14 t/s | 45.07 t/s | [`start-iq3-110k-q4.ps1`](scripts/start-iq3-110k-q4.ps1) |
-| 128K | 15061 MiB | 92.3% | 41.35 t/s | 56.72 t/s | [`start-iq3-128k.ps1`](scripts/start-iq3-128k.ps1) |
-| 130K | 14775 MiB | 90.6% | 41.04 t/s | 54.47 t/s | `--ctx-size 130000` |
-| **150K limite** | **15323 MiB** | **93.9%** | **41.54 t/s** | **52.71 t/s** | [`start-iq3-150k.ps1`](scripts/start-iq3-150k.ps1) |
-| 170K | 15872 MiB | 97.3% | 2.84 t/s | 44.95 t/s | colapso — attention quadrático |
-| 250K | 15911 MiB | 97.5% | — | — | máximo que cabe; 262K OOM |
+| Contexto | VRAM | % | Prompt | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| 32K | 12060 MiB | 73.9% | 72.24 t/s | 57.45 t/s | 78.7% | [`start-iq3-32k-q4.ps1`](scripts/start-iq3-32k-q4.ps1) |
+| 64K | 12888 MiB | 79.0% | 76.00 t/s | 57.18 t/s | 76.2% | [`start-iq3-64k-q4.ps1`](scripts/start-iq3-64k-q4.ps1) |
+| 100K | 13882 MiB | 85.1% | 63.98 t/s | 44.37 t/s | 53.2% | [`start-iq3-100k-q4.ps1`](scripts/start-iq3-100k-q4.ps1) |
+| 128K | 14736 MiB | 90.3% | 80.25 t/s | 41.47 t/s | 49.4% | [`start-iq3-128k.ps1`](scripts/start-iq3-128k.ps1) |
+| 148K | 15206 MiB | 93.2% | 83.29 t/s | 50.06 t/s | 63.4% | [`start-iq3-148k-q4.ps1`](scripts/start-iq3-148k-q4.ps1) |
+| 150K | 15254 MiB | 93.5% | 80.68 t/s | 54.00 t/s | 72.3% | [`start-iq3-150k.ps1`](scripts/start-iq3-150k.ps1) |
+| **160K limite** | **15528 MiB** | **95.2%** | **85.99 t/s** | **57.05 t/s** | **76.2%** | [`start-iq3-160k-q4.ps1`](scripts/start-iq3-160k-q4.ps1) |
+| 170K | 15808 MiB | 96.9% | 5.76 t/s | 57.14 t/s | 80.0% | colapso prompt — attention quadrático (`start-iq3-170k-q4.ps1`, 250K máx experimental) |
 
-**Q8_0**
+> Limite IQ3 Q4 subiu de 150K → 160K; 170K já colapsa prompt (gen ainda 57).
 
-| Contexto | VRAM | % | Prompt | Geração | Reproduzir |
-|---|---|---|---|---|---|
-| **110K limite** | **15908 MiB** | **97.5%** | **3.60 t/s** | **44.05 t/s** | `--ctx-size 110000 --cache-type-k q8_0 --cache-type-v q8_0` |
+**Q8_0** — KV q8_0
+
+| Contexto | VRAM | % | Prompt | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| 32K | 12590 MiB | 77.2% | 82.80 t/s | 46.67 t/s | 55.1% | [`start-iq3-32k-q8.ps1`](scripts/start-iq3-32k-q8.ps1) |
+| 64K | 13902 MiB | 85.2% | 87.33 t/s | 57.16 t/s | 77.4% | [`start-iq3-64k-q8.ps1`](scripts/start-iq3-64k-q8.ps1) |
+| **100K limite** | **15452 MiB** | **94.7%** | **84.24 t/s** | **57.44 t/s** | **80.0%** | [`start-iq3-100k-q8.ps1`](scripts/start-iq3-100k-q8.ps1) |
+| 110K | 15860 MiB | 97.2% | 5.72 t/s | 53.81 t/s | 74.6% | colapso prompt (`start-iq3-110k-q8.ps1`) |
+| 120K | 15850 MiB | 97.2% | 5.76 t/s | 54.64 t/s | 83.1% | colapso prompt (`start-iq3-120k-q8.ps1`) |
+
+> Limite IQ3 Q8 caiu de 110K → 100K após critério prompt <15 t/s; 110K/120K colapsam prompt mas geração mantém ~54 t/s.
 
 ## Instalação
 
@@ -129,15 +144,16 @@ dir C:\modelos\*.gguf
 .\scripts\clear-vram.ps1
 ```
 
-Ou direto (exemplos):
+Ou direto (exemplos — limites validados):
 
 ```powershell
-.\scripts\start-iq4-45k-q8.ps1   # IQ4 45K Q8 limite
-.\scripts\start-iq4-80k-q4.ps1   # IQ4 80K Q4 limite
-.\scripts\start-iq3-150k.ps1     # IQ3 150K Q4 limite
+.\scripts\start-iq4-45k-q8.ps1   # IQ4 45K Q8 limite (15705/15860 MiB, 50K colapsa)
+.\scripts\start-iq4-90k-q4.ps1   # IQ4 90K Q4 limite (15854 MiB, 100K colapsa)
+.\scripts\start-iq3-160k-q4.ps1  # IQ3 160K Q4 limite (15528 MiB, 170K colapsa prompt)
+.\scripts\start-iq3-100k-q8.ps1  # IQ3 100K Q8 limite (15452 MiB, 110K colapsa)
 ```
 
-Demais scripts seguem o padrão `start-iq{quant}-{ctx}-{kv}.ps1` (ver `scripts/`).
+Demais scripts seguem o padrão `start-iq{quant}-{ctx}-{kv}.ps1` — mercado `32K/64K/100K/128K/148K` + `limite` + `colapso` (ver `scripts/` e `tools/bench-results-v2.csv`).
 
 **5. Abra `http://127.0.0.1:1234`**
 
@@ -145,18 +161,23 @@ Demais scripts seguem o padrão `start-iq{quant}-{ctx}-{kv}.ps1` (ver `scripts/`
 
 ```
 run.ps1 / run.bat
-scripts/start-iq4-32k-q8.ps1    # Q8 32K  15.5 GB
-scripts/start-iq4-45k-q8.ps1    # Q8 45K  15.9 GB limite
-scripts/start-iq4-32k-q4.ps1    # Q4 32K  94.1%
-scripts/start-iq4-45k-q4.ps1    # Q4 45K  95.5%
-scripts/start-iq4-60k-q4.ps1    # Q4 60K  97.4%
-scripts/start-iq4-70k-q4.ps1    # Q4 70K  97.2%
-scripts/start-iq4-80k-q4.ps1    # Q4 80K  97.1% limite
-scripts/start-iq3-94k-q4.ps1    # Q4 94K  85.1%
-scripts/start-iq3-110k-q4.ps1   # Q4 110K 87.7%
-scripts/start-iq3-128k.ps1      # Q4 128K 92.3%
-scripts/start-iq3-150k.ps1      # Q4 150K 93.9% limite
+scripts/start-iq4-32k-q8.ps1    # Q8 32K  15705 MiB 92/52
+scripts/start-iq4-45k-q8.ps1    # Q8 45K limite 15860 MiB 94/45
+scripts/start-iq4-50k-q8.ps1    # Q8 50K colapso 27/10
+scripts/start-iq4-32k-q4.ps1    # Q4 32K 15105 MiB 110/46
+scripts/start-iq4-64k-q4.ps1    # Q4 64K 15865 MiB 104/41
+scripts/start-iq4-90k-q4.ps1    # Q4 90K limite 15854 MiB 107/46
+scripts/start-iq4-100k-q4.ps1   # Q4 100K colapso 23/8
+scripts/start-iq3-32k-q4.ps1    # Q4 32K 12060 MiB 72/57
+scripts/start-iq3-64k-q4.ps1    # Q4 64K 12888 MiB 76/57
+scripts/start-iq3-100k-q4.ps1   # Q4 100K 13882 MiB 63/44
+scripts/start-iq3-128k.ps1      # Q4 128K 14736 MiB 80/41
+scripts/start-iq3-148k-q4.ps1   # Q4 148K 15206 MiB 83/50
+scripts/start-iq3-160k-q4.ps1   # Q4 160K limite 15528 MiB 85/57
+scripts/start-iq3-100k-q8.ps1   # Q8 100K limite 15452 MiB 84/57
+scripts/start-iq3-110k-q8.ps1   # Q8 110K colapso prompt 5.7/53
 scripts/clear-vram.ps1
+tools/bench-grid-v2.ps1         # bench sistemático
 docs/tutorial.md
 ```
 

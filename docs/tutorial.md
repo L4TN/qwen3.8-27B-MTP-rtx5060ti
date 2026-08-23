@@ -11,9 +11,9 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 | CUDA | 13.3 (UMD) |
 | OS | Windows 11 22H2, PowerShell 5.1 |
 | llama.cpp | b10586 (`GGML_CUDA=1`) |
-| Date | 2026-08-22 |
+| Date | 2026-08-22 (revalidated 2026-08-22 systematic grid) |
 | Placa-mãe | ASUS PRIME B350M (PCIe 3.0) |
-| Method | MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch 512`, `24 tok prompt / 70 tok gen` |
+| Method | MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch 512`, `chat/completions 36 tok prompt / 70 tok gen`, `clear-vram` between cases |
 
 > GPU ASUS PCIe 5.0 running at PCIe 3.0 x16 — bandwidth limited to ~15.75 GB/s. Results reflect this condition; PCIe 4.0/5.0 offers higher bandwidth.
 
@@ -26,49 +26,64 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 
 Example: `C:\modelos` (outside repo, as used in tests).
 
-## Results
+## Methodology (academic)
 
-Total VRAM: **16311 MiB**. Limit target **~15.9 GB (97-98%)**.
+Systematic grid at market numbers `32K/64K/100K/128K/148K` + `limit` + `collapse +5K/+10K`. Per case: `clear-vram` (kill `llama-server` + `nvidia-smi`), load with `--fit off --load-mode none --no-warmup`, poll `http://127.0.0.1:1234/health` up to 200s, capture `nvidia-smi memory.used` + `KV buffer size` from log (`CUDA0 KV ...` + draft), `POST /v1/chat/completions` with `messages=[user: "Explain quantum entanglement..."]`, `max_tokens=70`, capture `timings.prompt_per_second` and `predicted_per_second` + `draft_n/draft_n_accepted`. Collapse criterion: `prompt <15 t/s` or `gen <15 t/s` (quadratic attention). Raw logs at `C:\Temp\bench\bench_*.log(.err)` and CSV `bench-results-v2.csv`. All `start-*.ps1` reproduce exact flags.
+
+## Results (revalidated — systematic grid)
+
+Total VRAM: **16311 MiB**. Stable limit **~15.9 GB (97-98%)**.
 
 ### IQ4_XS — 14.25 GB
 
-**Q8_0**
+**Q8_0** — KV q8_0 (precision)
+
+| Context | VRAM | % | Prompt | Gen | Draft | Reproduce |
+|---|---|---|---|---|---|---|
+| 32K | 15705 MiB | 96.3% | 92.73 t/s | 52.68 t/s | 72.3% | [`start-iq4-32k-q8.ps1`](../scripts/start-iq4-32k-q8.ps1) |
+| **45K limit** | **15860 MiB** | **97.2%** | **94.85 t/s** | **45.55 t/s** | **76.2%** | [`start-iq4-45k-q8.ps1`](../scripts/start-iq4-45k-q8.ps1) |
+| 50K | 15750 MiB | 96.6% | 27.86 t/s | 10.75 t/s | 55.8% | collapse beyond limit (`start-iq4-50k-q8.ps1`, 64K also collapses 25/9) |
+
+**Q4_0** — KV q4_0 (context)
 
 | Context | VRAM | % | Prompt | Gen | Reproduce |
 |---|---|---|---|---|---|
-| 32K | 15843 MiB | 97.1% | 44.81 t/s | 50.72 t/s | [`start-iq4-32k-q8.ps1`](../scripts/start-iq4-32k-q8.ps1) |
-| **45K limit** | **15963 MiB** | **97.8%** | **52.36 t/s** | **46.14 t/s** | [`start-iq4-45k-q8.ps1`](../scripts/start-iq4-45k-q8.ps1) |
+| 32K | 15105 MiB | 92.6% | 110.37 t/s | 46.18 t/s | 60.3% | [`start-iq4-32k-q4.ps1`](../scripts/start-iq4-32k-q4.ps1) |
+| 64K | 15865 MiB | 97.3% | 104.57 t/s | 41.82 t/s | 55.3% | [`start-iq4-64k-q4.ps1`](../scripts/start-iq4-64k-q4.ps1) |
+| 80K | 15842 MiB | 97.1% | 107.90 t/s | 41.32 t/s | 60.3% | [`start-iq4-80k-q4.ps1`](../scripts/start-iq4-80k-q4.ps1) |
+| **90K limit** | **15854 MiB** | **97.2%** | **107.26 t/s** | **46.28 t/s** | **72.3%** | [`start-iq4-90k-q4.ps1`](../scripts/start-iq4-90k-q4.ps1) |
+| 100K | 15856 MiB | 97.2% | 23.07 t/s | 8.25 t/s | 77.4% | collapse (`start-iq4-100k-q4.ps1`) |
 
-**Q4_0**
-
-| Context | VRAM | % | Prompt | Gen | Reproduce |
-|---|---|---|---|---|---|
-| 32K | 15347 MiB | 94.1% | 60.60 t/s | 48.94 t/s | [`start-iq4-32k-q4.ps1`](../scripts/start-iq4-32k-q4.ps1) |
-| 45K | 15585 MiB | 95.5% | 53.45 t/s | 48.32 t/s | [`start-iq4-45k-q4.ps1`](../scripts/start-iq4-45k-q4.ps1) |
-| 60K | 15891 MiB | 97.4% | 50.87 t/s | 42.67 t/s | [`start-iq4-60k-q4.ps1`](../scripts/start-iq4-60k-q4.ps1) |
-| 70K | 15851 MiB | 97.2% | 54.66 t/s | 43.54 t/s | [`start-iq4-70k-q4.ps1`](../scripts/start-iq4-70k-q4.ps1) |
-| **80K limit** | **15844 MiB** | **97.1%** | **44.07 t/s** | **43.85 t/s** | [`start-iq4-80k-q4.ps1`](../scripts/start-iq4-80k-q4.ps1) |
-| 90K | 15914 MiB | 97.6% | 28.10 t/s | 10.27 t/s | collapse beyond limit |
+> Limit IQ4 Q4 moved 80K → 90K after systematic revalidation; Q8 stays 45K.
 
 ### IQ3_XXS — 10.9 GB
 
-**Q4_0**
+**Q4_0** — KV q4_0 (giant context, market)
 
-| Context | VRAM | % | Prompt | Gen | Reproduce |
-|---|---|---|---|---|---|
-| 94K | 13873 MiB | 85.1% | 36.63 t/s | 44.36 t/s | [`start-iq3-94k-q4.ps1`](../scripts/start-iq3-94k-q4.ps1) |
-| 110K | 14308 MiB | 87.7% | 34.14 t/s | 45.07 t/s | [`start-iq3-110k-q4.ps1`](../scripts/start-iq3-110k-q4.ps1) |
-| 128K | 15061 MiB | 92.3% | 41.35 t/s | 56.72 t/s | [`start-iq3-128k.ps1`](../scripts/start-iq3-128k.ps1) |
-| 130K | 14775 MiB | 90.6% | 41.04 t/s | 54.47 t/s | `--ctx-size 130000` |
-| **150K limit** | **15323 MiB** | **93.9%** | **41.54 t/s** | **52.71 t/s** | [`start-iq3-150k.ps1`](../scripts/start-iq3-150k.ps1) |
-| 170K | 15872 MiB | 97.3% | 2.84 t/s | 44.95 t/s | collapse — attention quadratic |
-| 250K | 15911 MiB | 97.5% | — | — | max fits; 262K OOM |
+| Context | VRAM | % | Prompt | Gen | Draft | Reproduce |
+|---|---|---|---|---|---|---|
+| 32K | 12060 MiB | 73.9% | 72.24 t/s | 57.45 t/s | 78.7% | [`start-iq3-32k-q4.ps1`](../scripts/start-iq3-32k-q4.ps1) |
+| 64K | 12888 MiB | 79.0% | 76.00 t/s | 57.18 t/s | 76.2% | [`start-iq3-64k-q4.ps1`](../scripts/start-iq3-64k-q4.ps1) |
+| 100K | 13882 MiB | 85.1% | 63.98 t/s | 44.37 t/s | 53.2% | [`start-iq3-100k-q4.ps1`](../scripts/start-iq3-100k-q4.ps1) |
+| 128K | 14736 MiB | 90.3% | 80.25 t/s | 41.47 t/s | 49.4% | [`start-iq3-128k.ps1`](../scripts/start-iq3-128k.ps1) |
+| 148K | 15206 MiB | 93.2% | 83.29 t/s | 50.06 t/s | 63.4% | [`start-iq3-148k-q4.ps1`](../scripts/start-iq3-148k-q4.ps1) |
+| 150K | 15254 MiB | 93.5% | 80.68 t/s | 54.00 t/s | 72.3% | [`start-iq3-150k.ps1`](../scripts/start-iq3-150k.ps1) |
+| **160K limit** | **15528 MiB** | **95.2%** | **85.99 t/s** | **57.05 t/s** | **76.2%** | [`start-iq3-160k-q4.ps1`](../scripts/start-iq3-160k-q4.ps1) |
+| 170K | 15808 MiB | 96.9% | 5.76 t/s | 57.14 t/s | 80.0% | prompt collapse — quadratic attention (`start-iq3-170k-q4.ps1`, 250K max experimental) |
 
-**Q8_0**
+> Limit IQ3 Q4 moved 150K → 160K; 170K collapses prompt (gen still 57).
 
-| Context | VRAM | % | Prompt | Gen | Reproduce |
-|---|---|---|---|---|---|
-| **110K limit** | **15908 MiB** | **97.5%** | **3.60 t/s** | **44.05 t/s** | `--ctx-size 110000 --cache-type-k q8_0 --cache-type-v q8_0` |
+**Q8_0** — KV q8_0
+
+| Context | VRAM | % | Prompt | Gen | Draft | Reproduce |
+|---|---|---|---|---|---|---|
+| 32K | 12590 MiB | 77.2% | 82.80 t/s | 46.67 t/s | 55.1% | [`start-iq3-32k-q8.ps1`](../scripts/start-iq3-32k-q8.ps1) |
+| 64K | 13902 MiB | 85.2% | 87.33 t/s | 57.16 t/s | 77.4% | [`start-iq3-64k-q8.ps1`](../scripts/start-iq3-64k-q8.ps1) |
+| **100K limit** | **15452 MiB** | **94.7%** | **84.24 t/s** | **57.44 t/s** | **80.0%** | [`start-iq3-100k-q8.ps1`](../scripts/start-iq3-100k-q8.ps1) |
+| 110K | 15860 MiB | 97.2% | 5.72 t/s | 53.81 t/s | 74.6% | prompt collapse (`start-iq3-110k-q8.ps1`) |
+| 120K | 15850 MiB | 97.2% | 5.76 t/s | 54.64 t/s | 83.1% | prompt collapse (`start-iq3-120k-q8.ps1`) |
+
+> Limit IQ3 Q8 moved 110K → 100K after prompt <15 criterion; 110K/120K collapse prompt but gen stays ~54.
 
 ## Requirements
 
@@ -125,15 +140,16 @@ dir C:\modelos\*.gguf
 .\scripts\clear-vram.ps1
 ```
 
-Direct (examples):
+Direct (examples — validated limits):
 
 ```powershell
-.\scripts\start-iq4-45k-q8.ps1   # IQ4 45K Q8 limite
-.\scripts\start-iq4-80k-q4.ps1   # IQ4 80K Q4 limite
-.\scripts\start-iq3-150k.ps1     # IQ3 150K Q4 limite
+.\scripts\start-iq4-45k-q8.ps1   # IQ4 45K Q8 limite (50K collapses)
+.\scripts\start-iq4-90k-q4.ps1   # IQ4 90K Q4 limite (100K collapses)
+.\scripts\start-iq3-160k-q4.ps1  # IQ3 160K Q4 limite (170K collapses prompt)
+.\scripts\start-iq3-100k-q8.ps1  # IQ3 100K Q8 limite (110K collapses)
 ```
 
-Other scripts follow the pattern `start-iq{quant}-{ctx}-{kv}.ps1` (see `scripts/`).
+Other scripts follow the pattern `start-iq{quant}-{ctx}-{kv}.ps1` — market `32K/64K/100K/128K/148K` + `limit` + `collapse` (see `scripts/` and `tools/bench-results-v2.csv`).
 
 Custom context and KV:
 

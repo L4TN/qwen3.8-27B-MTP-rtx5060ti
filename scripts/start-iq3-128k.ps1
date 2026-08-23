@@ -1,27 +1,11 @@
-# Start IQ3_XXS 128K Q4 - Extended Context (safe market standard, 14.3GB / 16.3GB)
+﻿# Start IQ3_XXS 128K q4_0 - market 128K
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
-
 if (-not (Test-Path $LLAMA)) { Write-Error "llama-server not found at $LLAMA - install llama.cpp b10586 CUDA 13.3 to C:\llamacpp"; exit 1 }
 if (-not (Test-Path $MODEL)) { Write-Error "Model not found at $MODEL - download IQ3_XXS to C:\modelos"; exit 1 }
-
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS = '{"preserve-thinking":true,"reasoning_effort":"medium"}'
-
-Write-Host "Starting IQ3_XXS 128K Q4 on http://127.0.0.1:1234 - VRAM 14.3GB / 16.3GB (14650 MiB) - safe" -ForegroundColor Yellow
-Write-Host "Model: $MODEL | ctx 131072 | KV q4_0 | MTP n=3 | threads 6" -ForegroundColor DarkGray
-Write-Host "Note: 128K is safe market standard; 150K limit (15.0GB) and 250K max (15.5GB) validated" -ForegroundColor DarkGray
-
-& $LLAMA -m $MODEL `
- --no-mmproj --device CUDA0 `
- --spec-draft-device CUDA0 --gpu-layers-draft all `
- --spec-type draft-mtp --spec-draft-n-max 3 `
- --n-gpu-layers all --threads 6 `
- --fit off --load-mode none --no-warmup --flash-attn on `
- --ctx-size 131072 --parallel 1 `
- --cache-type-k q4_0 --cache-type-v q4_0 `
- --batch-size 512 --ubatch-size 512 `
- --jinja --temp 1 --top-p 0.95 --top-k 20 `
- --reasoning auto --reasoning-preserve --reasoning-effort medium `
- --host 127.0.0.1 --port 1234 -lv 4
+Write-Host "Starting IQ3_XXS 131072 q4_0 - market 128K on http://127.0.0.1:1234" -ForegroundColor Green
+Write-Host "Model: $MODEL | ctx 131072 | KV q4_0 | MTP n=3 | threads 6 | market 128K safe" -ForegroundColor DarkGray
+& $LLAMA -m $MODEL --no-mmproj --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 131072 --parallel 1 --cache-type-k q4_0 --cache-type-v q4_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234 -lv 4

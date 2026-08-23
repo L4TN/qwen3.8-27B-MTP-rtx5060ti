@@ -1,4 +1,4 @@
-# Qwen3.8-27B - RTX 5060 Ti - MTP (IQ4 45K vs IQ3 94K)
+# Qwen3.8-27B - RTX 5060 Ti - MTP (IQ4 45K Q8 vs IQ3 160K Q4) — grid sistemático 2026-08-22
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 
@@ -8,20 +8,20 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 Write-Host ""
 Write-Host "Select mode:" -ForegroundColor Cyan
-Write-Host "  [1] High Precision - IQ4_XS 45K Q8  (max quality, 47.9/37.1 t/s, 15.9GB) - Recommended" -ForegroundColor Green
-Write-Host "  [2] Extended Context - IQ3_XXS 150K Q4 (limit 15.0GB, 38/49 t/s, max 250K fits)" -ForegroundColor Yellow
-Write-Host "      Also validated: IQ4_XS 32K 15.5GB 52/44 t/s, IQ3 94K 13.5GB, 250K 15.5GB max"
+Write-Host "  [1] High Precision - IQ4_XS 45K Q8  (limite Q8, 94/45 t/s, 15860 MiB) - Recommended" -ForegroundColor Green
+Write-Host "  [2] Extended Context - IQ3_XXS 160K Q4 (limite 15528 MiB, 85/57 t/s, max 250K experimental)" -ForegroundColor Yellow
+Write-Host "      Also validated: IQ4 Q4 90K limite 107/46, IQ3 Q8 100K limite 84/57, 32K/64K/100K/128K/148K market grid"
 Write-Host ""
 $choice = Read-Host "Enter 1 or 2 (default 1)"
 
 if ($choice -eq "2") {
     $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
-    $CTX = "150000"; $KVK = "q4_0"; $KVV = "q4_0"
-    $DESC = "Extended Context - IQ3_XXS 150K Q4 (limit, 15.0GB)"
+    $CTX = "160000"; $KVK = "q4_0"; $KVV = "q4_0"
+    $DESC = "Extended Context - IQ3_XXS 160K Q4 limit (15528 MiB)"
 } else {
     $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf"
     $CTX = "45056"; $KVK = "q8_0"; $KVV = "q8_0"
-    $DESC = "High Precision - IQ4_XS 45K Q8"
+    $DESC = "High Precision - IQ4_XS 45K Q8 limit (15860 MiB)"
 }
 
 if (-not (Test-Path $MODEL)) { Write-Error "Model not found at $MODEL. Download to C:\modelos\"; exit 1 }
