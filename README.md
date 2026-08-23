@@ -62,6 +62,7 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 | **Generation** | 37.09 t/s (350 tok) | 49.23 t/s (60 tok) |
 | **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.63 (38/60) mean 2.90 |
 | **Quality** | Highest | High |
+| **Run** | [`start-iq4-45k.ps1`](scripts/start-iq4-45k.ps1) · [`.bat`](scripts/start-iq4-45k.bat) | [`start-iq3-150k.ps1`](scripts/start-iq3-150k.ps1) · [`.bat`](scripts/start-iq3-150k.bat) |
 
 - Configuration A prioritizes output quality (IQ4_XS) at 45K, validated at 32K (15.5 GB, 52.17/44.79 t/s), 40K (15.6 GB) and 45K (15.9 GB). 45K is the maximum that maintains IQ4_XS + Q8_0 quality without exceeding 16 GB — ideal for production agents needing extended context.
 - Configuration B prioritizes context length (IQ3_XXS). Validated limit tests to 15.9 GB (see below): 94K 13.5 GB, 110K 14.0 GB, 130K 14.4 GB, **150K 15.0 GB (sweet spot, 38/49 t/s)**, 170K+ 15.5 GB but prompt drops to 2.9 t/s. Max tested 250K 15.5 GB fits. Model supports 262K training limit but 262K OOMs.
