@@ -1,4 +1,4 @@
-# Start IQ3_XXS 128K Q4 - Extended Context (safe market standard, 14.3GB / 16.3GB)
+# Start IQ3_XXS 150K Q4 - Extended Context (limit, 15.0GB / 16.3GB - recommended limit)
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
@@ -9,9 +9,9 @@ if (-not (Test-Path $MODEL)) { Write-Error "Model not found at $MODEL - download
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS = '{"preserve-thinking":true,"reasoning_effort":"medium"}'
 
-Write-Host "Starting IQ3_XXS 128K Q4 on http://127.0.0.1:1234 - VRAM 14.3GB / 16.3GB (14650 MiB) - safe" -ForegroundColor Yellow
-Write-Host "Model: $MODEL | ctx 131072 | KV q4_0 | MTP n=3 | threads 6" -ForegroundColor DarkGray
-Write-Host "Note: 128K is safe market standard; 150K limit (15.0GB) and 250K max (15.5GB) validated" -ForegroundColor DarkGray
+Write-Host "Starting IQ3_XXS 150K Q4 on http://127.0.0.1:1234 - VRAM 15.0GB / 16.3GB (15323 MiB) - limit" -ForegroundColor Yellow
+Write-Host "Model: $MODEL | ctx 150000 | KV q4_0 | MTP n=3 | threads 6" -ForegroundColor DarkGray
+Write-Host "Note: 150K is limit for balanced speed; 131072 (128K) safe uses 14.7GB. 250K max fits 15.5GB. Q8 limit is 110K (see README)" -ForegroundColor DarkGray
 
 & $LLAMA -m $MODEL `
  --no-mmproj --device CUDA0 `
@@ -19,7 +19,7 @@ Write-Host "Note: 128K is safe market standard; 150K limit (15.0GB) and 250K max
  --spec-type draft-mtp --spec-draft-n-max 3 `
  --n-gpu-layers all --threads 6 `
  --fit off --load-mode none --no-warmup --flash-attn on `
- --ctx-size 131072 --parallel 1 `
+ --ctx-size 150000 --parallel 1 `
  --cache-type-k q4_0 --cache-type-v q4_0 `
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `

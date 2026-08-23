@@ -47,27 +47,44 @@ Detailed measurements in [Configurations](#configurations).
 
 ## Configurations
 
-Two validated profiles are provided. Choose based on your trade-off between quality and context length.
+Two validated profiles are provided. Choose based on your trade-off between quality and context length. Each profile exposes **safe** (market standard) and **limit** (max @ ~15.9 GB) scripts — total VRAM is 16311 MiB (16.3 GB).
 
-|  | Configuration A — High Precision | Configuration B — Extended Context |
+|  | Configuration A — High Precision (IQ4_XS) | Configuration B — Extended Context (IQ3_XXS) |
 |---|---|---|
 | **Use case** | Coding agent, reasoning, production quality | Long-document analysis, RAG, whole-repo ingestion |
 | **Model file** | `Qwen3.8-27B-UD-IQ4_XS.gguf` (14.25 GB) | `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9 GB) |
 | **Download** | [IQ4_XS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) | [IQ3_XXS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
-| **Context** | 45,056 tokens (sweet spot) | 150,000 tokens (sweet spot) |
-| **KV cache** | Q8_0 | Q4_0 |
+| **KV cache (primary)** | Q8_0 (quality) — Q4_0 extends context +77% (see inverted) | Q4_0 (capacity) — Q8_0 reduces context -27% (see inverted) |
 | **Flash Attention** | on | on |
-| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) — 97.8% | 15.0 GB / 16.3 GB (15323 MiB) — 92.1% |
-| **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 38.10 t/s (19 tok / 498 ms) |
-| **Generation** | 37.09 t/s (350 tok) | 49.23 t/s (60 tok) |
-| **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.63 (38/60) mean 2.90 |
+| **Context — safe** | 32,768 tokens (market standard) | 131,072 tokens (128K market) |
+| **VRAM — safe** | 15.5 GB / 16.3 GB (15843 MiB) — 97.1% (idle 15826, after 15878) | 14.7 GB / 16.3 GB (15061 MiB idle, 15314 after) — 92.3% |
+| **Prompt — safe** | 44.81 t/s (24 tok / 535 ms) · 52.17 t/s (32K old) | 41.35 t/s (24 tok / 580 ms) |
+| **Gen — safe** | 50.72 t/s (70 tok) · 44.79 t/s (old) | 56.72 t/s (70 tok) |
+| **MTP — safe** | 0.71 (47/66) mean 3.14 | 0.76 (48/63) mean 3.29 |
+| **Context — limit** | 45,056 tokens (limit) — max for Q8_0 @15.9GB | 150,000 tokens (limit) — balanced @15.0GB (250K max 15.5GB fits) |
+| **VRAM — limit** | 15.9 GB / 16.3 GB (15963 MiB) — 97.8% (idle 15867, after 15883) | 15.0 GB / 16.3 GB (15323 MiB) — 92.1% (idle 15480, after 15760) |
+| **Prompt — limit** | 52.36 t/s (24 tok / 458 ms) · 47.91 t/s (25 tok old) | 41.54 t/s (24 tok / 577 ms) · 38.10 t/s (19 tok old) |
+| **Gen — limit** | 46.14 t/s (70 tok) · 37.09 t/s (350 tok old) | 52.71 t/s (70 tok) · 49.23 t/s (60 tok old) |
+| **MTP — limit** | 0.73 (47/64) mean 3.14 | 0.68 (46/68) mean 3.00 |
 | **Quality** | Highest | High |
-| **Run** | [`start-iq4-32k.ps1`](scripts/start-iq4-32k.ps1) · [`.bat`](scripts/start-iq4-32k.bat) — safe | [`start-iq3-128k.ps1`](scripts/start-iq3-128k.ps1) · [`.bat`](scripts/start-iq3-128k.bat) — safe |
+| **Run — safe** | [`start-iq4-32k.ps1`](scripts/start-iq4-32k.ps1) · [`.bat`](scripts/start-iq4-32k.bat) | [`start-iq3-128k.ps1`](scripts/start-iq3-128k.ps1) · [`.bat`](scripts/start-iq3-128k.bat) |
+| **Run — limit** | [`start-iq4-45k.ps1`](scripts/start-iq4-45k.ps1) · [`.bat`](scripts/start-iq4-45k.bat) | [`start-iq3-150k.ps1`](scripts/start-iq3-150k.ps1) · [`.bat`](scripts/start-iq3-150k.bat) |
 
-- Configuration A prioritizes output quality (IQ4_XS) at 45K, validated at 32K (15.5 GB, 52.17/44.79 t/s), 40K (15.6 GB) and 45K (15.9 GB). 45K is the maximum that maintains IQ4_XS + Q8_0 quality without exceeding 16 GB — ideal for production agents needing extended context.
-- Configuration B prioritizes context length (IQ3_XXS). Validated limit tests to 15.9 GB (see below): 94K 13.5 GB, 110K 14.0 GB, 130K 14.4 GB, **150K 15.0 GB (sweet spot, 38/49 t/s)**, 170K+ 15.5 GB but prompt drops to 2.9 t/s. Max tested 250K 15.5 GB fits. Model supports 262K training limit but 262K OOMs.
+- Configuration A prioritizes output quality (IQ4_XS) at 45K Q8_0 limit (15.9GB). Safe 32K uses 15.5GB and is 9% faster in generation (50.72 vs 46.14 t/s) with slightly lower prompt (44.81 vs 52.36 t/s) — diff is not decisive, safe leaves ~120 MiB headroom and broader client compatibility.
+- Configuration B prioritizes context length (IQ3_XXS) Q4_0. Safe 131K uses 14.7GB (92.3%) and is 7% faster than limit in both prompt (41.35 vs 41.54 ~same) and gen (56.72 vs 52.71) — safe is marginally faster and leaves 1.6GB headroom. Limit 150K is recommended max for balanced speed; prompt stays ~41 t/s up to 150K, then collapses to 2.9 t/s at 170K+ due to quadratic attention (gen stays ~43 t/s via MTP). Max tested 250K 15.5GB fits, 262K OOMs.
 
-Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`.
+Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`. Safe vs limit speed diff is **not dramatic** (<10%) up to limit; beyond limit prompt collapses.
+
+### KV cache quantization — inverted tests (same 16.3GB budget)
+
+| Model + KV | Context limit @ ~15.9GB | VRAM | Prompt (24 tok) | Gen (70 tok) | Note |
+|---|---|---|---|---|
+| **IQ4_XS Q8_0** (primary) | 45,056 tokens (limit) | 15963 MiB — 97.8% (KV 1496+598) | 52.36 t/s | 46.14 t/s | quality max, context limited |
+| **IQ4_XS Q4_0** (inverted) | 80,000 tokens (practical limit) — 90K collapses | 15844 MiB — 97.1% @80K (KV 1408+313) · 15914 MiB @90K | 44.07 t/s @80K · 60.60 t/s @32K · 54.66 t/s @70K · **28.10 t/s @90K collapse** | 43.85 t/s @80K · 48.94 t/s @32K · **10.27 t/s @90K collapse** | **+77% context** vs Q8 (45K→80K) at same VRAM, prompt -16% gen -5% — trades KV precision for context; beyond 80K speed collapses |
+| **IQ3_XXS Q4_0** (primary) | 150,000 tokens (limit) 92.1% — 250K max 97.5% | 15323 MiB @150K (KV 2637), 15911 MiB @250K | 41.54 t/s @150K | 52.71 t/s @150K | capacity max |
+| **IQ3_XXS Q8_0** (inverted) | 110,000 tokens (limit) | 15908 MiB — 97.5% @110K (KV 3655+430) | **3.60 t/s** @110K (6671 ms) | 44.05 t/s @110K | **-27% context** vs Q4 and **10x prompt collapse** (41→3.6 t/s) — Q8 at large ctx is quadratic; gen via MTP stays ~44 t/s |
+
+- **Takeaway:** On IQ4_XS, Q4_0 buys significant context headroom (45K→80K+) with negligible speed loss (<10%) but lower KV fidelity. On IQ3_XXS at large ctx, Q8_0 is counter-productive: it cuts max context (150K→110K) and collapses prompt 10x. Use primary KV per column; inverted results are for tuning.
 
 > To switch models, run [`scripts/clear-vram.ps1`](scripts/clear-vram.ps1) / [`.bat`](scripts/clear-vram.bat) to free VRAM (371 MiB idle).
 
@@ -104,10 +121,10 @@ curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsl
 # curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
 
 # 4. Run — choose one:
-.\run.ps1                          # interactive menu (45K vs 150K sweet spots)
+.\run.ps1                          # interactive menu (45K vs 150K limits)
 # or dedicated SAFE scripts (post-install, market standard):
-.\scripts\start-iq4-32k.ps1         # High Precision 32K Q8 — 15.5GB safe (45K max)
-.\scripts\start-iq3-128k.ps1        # Extended Context 128K Q4 — 14.3GB safe (150K sweet spot)
+.\scripts\start-iq4-32k.ps1         # High Precision 32K Q8 — 15.5GB safe (45K limit)
+.\scripts\start-iq3-128k.ps1        # Extended Context 128K Q4 — 14.3GB safe (150K limit)
 .\scripts\clear-vram.ps1            # kill server and free VRAM
 
 # 5. Open
@@ -133,7 +150,7 @@ C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf --device C
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS='{"preserve-thinking":true,"reasoning_effort":"medium"}'
 C:\llamacpp\llama-server.exe -m C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size 94208 --parallel 1 --cache-type-k q4_0 --cache-type-v q4_0 --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234
 
-# 150K sweet spot (15.0 GB, best balance — recommended for extended context)
+# 150K limit (15.0 GB, best balance — recommended for extended context)
 # --ctx-size 150000  # KV 2637 MiB, prompt 38.1 t/s, gen 49.2 t/s
 
 # 250K max validated (15.5 GB, 15911 MiB — fits but prompt 2.9 t/s beyond 150K)
@@ -187,7 +204,7 @@ A — IQ4_XS Q8  45K : prompt 47.91 t/s | eval 37.09 t/s | 15.9 GB (15963 MiB) |
 B — IQ3_XXS Q4  94K : prompt 36.63 t/s | eval 44.36 t/s | 13.5 GB (13873 MiB) | KV 1656 MiB
 B — IQ3_XXS Q4 110K : prompt 34.14 t/s | eval 45.07 t/s | 14.0 GB (14308 MiB) | KV 1935 MiB
 B — IQ3_XXS Q4 130K : prompt 41.04 t/s | eval 54.47 t/s | 14.4 GB (14775 MiB) | KV 2286 MiB
-B — IQ3_XXS Q4 150K : prompt 38.10 t/s | eval 49.23 t/s | 15.0 GB (15323 MiB) | KV 2637 MiB — SWEET SPOT
+B — IQ3_XXS Q4 150K : prompt 38.10 t/s | eval 49.23 t/s | 15.0 GB (15323 MiB) | KV 2637 MiB — LIMIT (balanced)
 B — IQ3_XXS Q4 170K : prompt  2.84 t/s | eval 44.95 t/s | 15.5 GB (15872 MiB) | KV 2992 MiB — prompt degrades, gen ok
 B — IQ3_XXS Q4 190K : prompt  2.89 t/s | eval 43.18 t/s | 15.5 GB (15835 MiB) | KV 3343 MiB
 B — IQ3_XXS Q4 210K : prompt  2.89 t/s | eval 36.88 t/s | 15.5 GB (15821 MiB) | KV 3694 MiB
@@ -224,8 +241,10 @@ Full step-by-step tutorial (agnostic, no personal data): [docs/tutorial.md](docs
 ├── README.md
 ├── run.ps1 / run.bat            # Interactive menu (45K vs 150K)
 ├── scripts/
-│   ├── start-iq4-32k.ps1/.bat    # High Precision 32K Q8 — 15.5GB safe (45K max)
-│   ├── start-iq3-128k.ps1/.bat   # Extended Context 128K Q4 — 14.3GB safe (150K sweet spot)
+│   ├── start-iq4-32k.ps1/.bat    # High Precision 32K Q8 — 15.5GB safe (45K limit)
+│   ├── start-iq4-45k.ps1/.bat    # High Precision 45K Q8 — 15.9GB limit
+│   ├── start-iq3-128k.ps1/.bat   # Extended Context 128K Q4 — 14.3GB safe (150K limit)
+│   ├── start-iq3-150k.ps1/.bat   # Extended Context 150K Q4 — 15.0GB limit (250K max)
 │   ├── clear-vram.ps1/.bat       # Kill server and clear VRAM
 │   └── README.md                 # Post-install usage
 ├── docs/

@@ -1,17 +1,17 @@
-# Start IQ3_XXS 128K Q4 - Extended Context (safe market standard, 14.3GB / 16.3GB)
+# Start IQ4_XS 45K Q8 - High Precision (limit, 15.9GB / 16.3GB - max for Q8)
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
-$MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
+$MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf"
 
 if (-not (Test-Path $LLAMA)) { Write-Error "llama-server not found at $LLAMA - install llama.cpp b10586 CUDA 13.3 to C:\llamacpp"; exit 1 }
-if (-not (Test-Path $MODEL)) { Write-Error "Model not found at $MODEL - download IQ3_XXS to C:\modelos"; exit 1 }
+if (-not (Test-Path $MODEL)) { Write-Error "Model not found at $MODEL - download IQ4_XS to C:\modelos"; exit 1 }
 
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 $env:LLAMA_ARG_CHAT_TEMPLATE_KWARGS = '{"preserve-thinking":true,"reasoning_effort":"medium"}'
 
-Write-Host "Starting IQ3_XXS 128K Q4 on http://127.0.0.1:1234 - VRAM 14.3GB / 16.3GB (14650 MiB) - safe" -ForegroundColor Yellow
-Write-Host "Model: $MODEL | ctx 131072 | KV q4_0 | MTP n=3 | threads 6" -ForegroundColor DarkGray
-Write-Host "Note: 128K is safe market standard; 150K limit (15.0GB) and 250K max (15.5GB) validated" -ForegroundColor DarkGray
+Write-Host "Starting IQ4_XS 45K Q8 on http://127.0.0.1:1234 - VRAM 15.9GB / 16.3GB (15963 MiB) - limit" -ForegroundColor Green
+Write-Host "Model: $MODEL | ctx 45056 | KV q8_0 | MTP n=3 | threads 6" -ForegroundColor DarkGray
+Write-Host "Note: 45K is limit for IQ4 Q8 (97.8%); 32K safe uses 15.5GB. Q4 allows 80K+ at same VRAM (see README)" -ForegroundColor DarkGray
 
 & $LLAMA -m $MODEL `
  --no-mmproj --device CUDA0 `
@@ -19,8 +19,8 @@ Write-Host "Note: 128K is safe market standard; 150K limit (15.0GB) and 250K max
  --spec-type draft-mtp --spec-draft-n-max 3 `
  --n-gpu-layers all --threads 6 `
  --fit off --load-mode none --no-warmup --flash-attn on `
- --ctx-size 131072 --parallel 1 `
- --cache-type-k q4_0 --cache-type-v q4_0 `
+ --ctx-size 45056 --parallel 1 `
+ --cache-type-k q8_0 --cache-type-v q8_0 `
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `
  --reasoning auto --reasoning-preserve --reasoning-effort medium `
