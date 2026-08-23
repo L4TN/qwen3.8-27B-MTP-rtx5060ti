@@ -1,4 +1,4 @@
-# Qwen3.8-27B a 50+ t/s em uma única RTX 5060 Ti 16GB com MTP
+# Qwen3.8-27B em 1x RTX 5060 Ti 16GB — Extraia o máximo com MTP nativo
 
 <p align="center">
   <img src="https://img.shields.io/badge/Windows%2011-0078D6?style=flat&logo=windows&logoColor=white" />
