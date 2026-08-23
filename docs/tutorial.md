@@ -12,7 +12,10 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 | OS | Windows 11 22H2, PowerShell 5.1 |
 | llama.cpp | b10586 (`GGML_CUDA=1`) |
 | Date | 2026-08-22 |
+| Placa-mãe | ASUS PRIME B350M (PCIe 3.0) |
 | Method | MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch 512`, `24 tok prompt / 70 tok gen` |
+
+> GPU ASUS PCIe 5.0 running at PCIe 3.0 x16 — bandwidth limited to ~15.75 GB/s. Results reflect this condition; PCIe 4.0/5.0 offers higher bandwidth.
 
 ## Models
 
