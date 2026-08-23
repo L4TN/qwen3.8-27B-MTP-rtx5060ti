@@ -69,6 +69,8 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 
 Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`.
 
+> To switch models, run [`scripts/clear-vram.ps1`](scripts/clear-vram.ps1) / [`.bat`](scripts/clear-vram.bat) to free VRAM (371 MiB idle).
+
 ---
 
 ## Requirements
