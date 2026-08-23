@@ -1,4 +1,4 @@
-# Start IQ4_XS 32K Q8 - High Precision (safe, 15.5GB / 16.3GB - market standard)
+﻿# Start IQ4_XS 32K Q8 - High Precision (safe, 15.5GB / 16.3GB - market standard)
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf"
@@ -24,4 +24,4 @@ Write-Host "Note: 32K is safe market standard; 45K (15.9GB) validated as max for
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `
  --reasoning auto --reasoning-preserve --reasoning-effort medium `
- --host 127.0.0.1 --port 1234 -lv 4
+ --host 0.0.0.0 --port 1234 -lv 4

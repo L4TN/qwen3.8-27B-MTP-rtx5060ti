@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 REM Qwen3.8-27B - RTX 5060 Ti - MTP
 set LLAMA=C:\llamacpp\llama-server.exe
 set LLAMA_ARG_CHAT_TEMPLATE_KWARGS={"preserve-thinking":true,"reasoning_effort":"medium"}
@@ -32,5 +32,5 @@ echo Starting Extended Context 160K limit on http://127.0.0.1:1234
 
 :run
 if not exist "%MODEL%" echo ERROR: %MODEL% not found && pause && exit /b 1
-"%LLAMA%" -m "%MODEL%" --no-mmproj --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size %CTX% --parallel 1 --cache-type-k %KVK% --cache-type-v %KVV% --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 127.0.0.1 --port 1234 -lv 4
+"%LLAMA%" -m "%MODEL%" --no-mmproj --device CUDA0 --spec-draft-device CUDA0 --gpu-layers-draft all --spec-type draft-mtp --spec-draft-n-max 3 --n-gpu-layers all --threads 6 --fit off --load-mode none --no-warmup --flash-attn on --ctx-size %CTX% --parallel 1 --cache-type-k %KVK% --cache-type-v %KVV% --batch-size 512 --ubatch-size 512 --jinja --temp 1 --top-p 0.95 --top-k 20 --reasoning auto --reasoning-preserve --reasoning-effort medium --host 0.0.0.0 --port 1234 -lv 4
 pause

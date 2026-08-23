@@ -1,4 +1,4 @@
-# Start IQ3_XXS 150K Q4 - market 150K (15254 MiB 80/54) - below 160K limite
+﻿# Start IQ3_XXS 150K Q4 - market 150K (15254 MiB 80/54) - below 160K limite
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 $MODEL = "C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf"
@@ -23,4 +23,4 @@ Write-Host "Model: $MODEL | ctx 150000 | KV q4_0 | MTP n=3 | threads 6 | 150K OK
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `
  --reasoning auto --reasoning-preserve --reasoning-effort medium `
- --host 127.0.0.1 --port 1234 -lv 4
+ --host 0.0.0.0 --port 1234 -lv 4

@@ -1,4 +1,4 @@
-# Qwen3.8-27B - RTX 5060 Ti - MTP (IQ4 45K Q8 vs IQ3 160K Q4) — grid sistemático 2026-08-22
+﻿# Qwen3.8-27B - RTX 5060 Ti - MTP (IQ4 45K Q8 vs IQ3 160K Q4) — grid sistemático 2026-08-22
 $ErrorActionPreference = "Stop"
 $LLAMA = "C:\llamacpp\llama-server.exe"
 
@@ -43,4 +43,4 @@ Write-Host "Model: $MODEL | ctx $CTX | KV $KVK" -ForegroundColor DarkGray
  --batch-size 512 --ubatch-size 512 `
  --jinja --temp 1 --top-p 0.95 --top-k 20 `
  --reasoning auto --reasoning-preserve --reasoning-effort medium `
- --host 127.0.0.1 --port 1234 -lv 4
+ --host 0.0.0.0 --port 1234 -lv 4
