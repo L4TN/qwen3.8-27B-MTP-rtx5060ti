@@ -5,11 +5,11 @@
   <img src="https://img.shields.io/badge/CUDA%2013.3-76B900?style=flat&logo=nvidia&logoColor=white" />
   <img src="https://img.shields.io/badge/llama.cpp-b10586-000000?style=flat" />
   <img src="https://img.shields.io/badge/MTP-n=3-0A66C2?style=flat" />
-  <img src="https://img.shields.io/badge/VRAM-16GB-8A2BE2?style=flat" />
+  <img src="https://img.shields.io/badge/VRAM-16.3GB_(16311_MiB)-8A2BE2?style=flat" />
 </p>
 
 <p align="center">
-  Validated configuration for <b>Qwen3.8-27B GGUF</b> with native Multi-Token Prediction on a single <b>RTX 5060 Ti 16GB</b> under Windows 11.<br>
+  Validated configuration for <b>Qwen3.8-27B GGUF</b> with native Multi-Token Prediction on a single <b>RTX 5060 Ti 16.3GB (16311 MiB)</b> under Windows 11.<br>
   Achieves <b>50-60 tokens/s</b> with correct CUDA 13.3 builds — 2x over non-MTP baselines on identical hardware.
 </p>
 
@@ -29,7 +29,7 @@ This repository reproduces the 50+ t/s results from `unsloth/Qwen3.8-27B-GGUF` d
 
 All numbers below are measured on real hardware on 2026-08-22, not estimates.
 
-Validated environment: RTX 5060 Ti 16GB, Driver 610.88, CUDA UMD 13.3, llama.cpp b10586, Windows 11.
+Validated environment: RTX 5060 Ti 16.3GB (16311 MiB), Driver 610.88, CUDA UMD 13.3, llama.cpp b10586, Windows 11.
 
 ---
 
@@ -54,10 +54,10 @@ Two validated profiles are provided. Choose based on your trade-off between qual
 | **Use case** | Coding agent, reasoning, production quality | Long-document analysis, RAG, whole-repo ingestion |
 | **Model file** | `Qwen3.8-27B-UD-IQ4_XS.gguf` (14.25 GB) | `Qwen3.8-27B-UD-IQ3_XXS.gguf` (10.9 GB) |
 | **Download** | [IQ4_XS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) | [IQ3_XXS.gguf](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
-| **Context** | 45,056 tokens | 150,000 tokens (sweet spot) |
+| **Context** | 45,056 tokens (sweet spot) | 150,000 tokens (sweet spot) |
 | **KV cache** | Q8_0 | Q4_0 |
 | **Flash Attention** | on | on |
-| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) | 15.0 GB / 16.3 GB (15323 MiB) |
+| **VRAM peak** | 15.9 GB / 16.3 GB (15963 MiB) — 97.8% | 15.0 GB / 16.3 GB (15323 MiB) — 92.1% |
 | **Prompt eval** | 47.91 t/s (25 tok / 522 ms) | 38.10 t/s (19 tok / 498 ms) |
 | **Generation** | 37.09 t/s (350 tok) | 49.23 t/s (60 tok) |
 | **MTP acceptance** | 0.55 (217/393) mean 2.66 | 0.63 (38/60) mean 2.90 |
@@ -73,7 +73,7 @@ Both use `parallel=1`, `fit off`, `n-gpu-layers all`, `threads 6`, `batch 512`.
 ## Requirements
 
 - Windows 11 x64 22H2 or later
-- NVIDIA GPU with 16 GB VRAM (validated on RTX 5060 Ti; RTX 4080/4090 compatible)
+- NVIDIA GPU with 16.3 GB VRAM (16311 MiB, validated on RTX 5060 Ti; RTX 4080/4090 compatible)
 - Driver >= 610.88 exposing CUDA 13.3 (verify with `nvidia-smi`; RTX 50-series requires CUDA 13.x, RTX 30/40-series can use 12.4)
 - 20 GB free disk space
 - PowerShell 5.1
