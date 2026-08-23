@@ -29,31 +29,45 @@ Total VRAM: **16311 MiB**. Limit target **~15.9 GB (97-98%)**.
 
 ### IQ4_XS — 14.25 GB
 
-| KV | Context | VRAM | % | Prompt | Gen | Reproduce |
-|---|---|---|---|---|---|---|
-| Q8_0 | 32K | 15843 MiB | 97.1% | 44.81 t/s | 50.72 t/s | [`start-iq4-32k.ps1`](../scripts/start-iq4-32k.ps1) |
-| Q8_0 | **45K limit** | **15963 MiB** | **97.8%** | **52.36 t/s** | **46.14 t/s** | [`start-iq4-45k.ps1`](../scripts/start-iq4-45k.ps1) |
-| Q4_0 | 32K | 15347 MiB | 94.1% | 60.60 t/s | 48.94 t/s | `--ctx-size 32768 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 45K | 15585 MiB | 95.5% | 53.45 t/s | 48.32 t/s | `--ctx-size 45056 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 60K | 15891 MiB | 97.4% | 50.87 t/s | 42.67 t/s | `--ctx-size 60000 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 70K | 15851 MiB | 97.2% | 54.66 t/s | 43.54 t/s | `--ctx-size 70000 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | **80K limit** | **15844 MiB** | **97.1%** | **44.07 t/s** | **43.85 t/s** | `--ctx-size 80000 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 90K | 15914 MiB | 97.6% | 28.10 t/s | 10.27 t/s | collapse beyond limit |
+**Q8_0 — qualidade máxima**
+
+| Context | VRAM | % | Prompt | Gen | Reproduce |
+|---|---|---|---|---|---|
+| 32K | 15843 MiB | 97.1% | 44.81 t/s | 50.72 t/s | [`start-iq4-32k.ps1`](../scripts/start-iq4-32k.ps1) |
+| **45K limit** | **15963 MiB** | **97.8%** | **52.36 t/s** | **46.14 t/s** | [`start-iq4-45k.ps1`](../scripts/start-iq4-45k.ps1) |
+
+**Q4_0 — mais contexto, mesma VRAM**
+
+| Context | VRAM | % | Prompt | Gen | Reproduce |
+|---|---|---|---|---|---|
+| 32K | 15347 MiB | 94.1% | 60.60 t/s | 48.94 t/s | [`start-iq4-32k-q4.ps1`](../scripts/start-iq4-32k-q4.ps1) |
+| 45K | 15585 MiB | 95.5% | 53.45 t/s | 48.32 t/s | [`start-iq4-45k-q4.ps1`](../scripts/start-iq4-45k-q4.ps1) |
+| 60K | 15891 MiB | 97.4% | 50.87 t/s | 42.67 t/s | [`start-iq4-60k-q4.ps1`](../scripts/start-iq4-60k-q4.ps1) |
+| 70K | 15851 MiB | 97.2% | 54.66 t/s | 43.54 t/s | [`start-iq4-70k-q4.ps1`](../scripts/start-iq4-70k-q4.ps1) |
+| **80K limit** | **15844 MiB** | **97.1%** | **44.07 t/s** | **43.85 t/s** | [`start-iq4-80k-q4.ps1`](../scripts/start-iq4-80k-q4.ps1) |
+| 90K | 15914 MiB | 97.6% | 28.10 t/s | 10.27 t/s | collapse beyond limit |
 
 Q8_0 max 45K. Q4_0 extends to 80K (+77% context at same VRAM).
 
 ### IQ3_XXS — 10.9 GB
 
-| KV | Context | VRAM | % | Prompt | Gen | Reproduce |
-|---|---|---|---|---|---|---|
-| Q4_0 | 94K | 13873 MiB | 85.1% | 36.63 t/s | 44.36 t/s | `--ctx-size 94208 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 110K | 14308 MiB | 87.7% | 34.14 t/s | 45.07 t/s | `--ctx-size 110000 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | 128K | 15061 MiB | 92.3% | 41.35 t/s | 56.72 t/s | [`start-iq3-128k.ps1`](../scripts/start-iq3-128k.ps1) |
-| Q4_0 | 130K | 14775 MiB | 90.6% | 41.04 t/s | 54.47 t/s | `--ctx-size 130000 --cache-type-k q4_0 --cache-type-v q4_0` |
-| Q4_0 | **150K limit** | **15323 MiB** | **93.9%** | **41.54 t/s** | **52.71 t/s** | [`start-iq3-150k.ps1`](../scripts/start-iq3-150k.ps1) |
-| Q4_0 | 170K | 15872 MiB | 97.3% | 2.84 t/s | 44.95 t/s | collapse — attention quadratic |
-| Q4_0 | 250K | 15911 MiB | 97.5% | — | — | max fits; 262K OOM |
-| Q8_0 | **110K limit** | **15908 MiB** | **97.5%** | **3.60 t/s** | **44.05 t/s** | `--ctx-size 110000 --cache-type-k q8_0 --cache-type-v q8_0` |
+**Q4_0 — capacidade máxima**
+
+| Context | VRAM | % | Prompt | Gen | Reproduce |
+|---|---|---|---|---|---|
+| 94K | 13873 MiB | 85.1% | 36.63 t/s | 44.36 t/s | `--ctx-size 94208` |
+| 110K | 14308 MiB | 87.7% | 34.14 t/s | 45.07 t/s | `--ctx-size 110000` |
+| 128K | 15061 MiB | 92.3% | 41.35 t/s | 56.72 t/s | [`start-iq3-128k.ps1`](../scripts/start-iq3-128k.ps1) |
+| 130K | 14775 MiB | 90.6% | 41.04 t/s | 54.47 t/s | `--ctx-size 130000` |
+| **150K limit** | **15323 MiB** | **93.9%** | **41.54 t/s** | **52.71 t/s** | [`start-iq3-150k.ps1`](../scripts/start-iq3-150k.ps1) |
+| 170K | 15872 MiB | 97.3% | 2.84 t/s | 44.95 t/s | collapse — attention quadratic |
+| 250K | 15911 MiB | 97.5% | — | — | max fits; 262K OOM |
+
+**Q8_0 — para comparação**
+
+| Context | VRAM | % | Prompt | Gen | Reproduce |
+|---|---|---|---|---|---|
+| **110K limit** | **15908 MiB** | **97.5%** | **3.60 t/s** | **44.05 t/s** | `--ctx-size 110000 --cache-type-k q8_0 --cache-type-v q8_0` |
 
 Q8_0 at large context is counter-productive: 150K Q4 → 110K Q8 (-27%) and 10x prompt collapse.
 
@@ -103,10 +117,15 @@ curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/uns
 Direct:
 
 ```powershell
-.\scripts\start-iq4-32k.ps1
-.\scripts\start-iq4-45k.ps1
-.\scripts\start-iq3-128k.ps1
-.\scripts\start-iq3-150k.ps1
+.\scripts\start-iq4-32k.ps1      # Q8  32K
+.\scripts\start-iq4-45k.ps1      # Q8  45K limit
+.\scripts\start-iq4-32k-q4.ps1   # Q4  32K
+.\scripts\start-iq4-45k-q4.ps1   # Q4  45K
+.\scripts\start-iq4-60k-q4.ps1   # Q4  60K
+.\scripts\start-iq4-70k-q4.ps1   # Q4  70K
+.\scripts\start-iq4-80k-q4.ps1   # Q4  80K limit
+.\scripts\start-iq3-128k.ps1     # Q4 128K
+.\scripts\start-iq3-150k.ps1     # Q4 150K limit
 ```
 
 Custom context and KV:
