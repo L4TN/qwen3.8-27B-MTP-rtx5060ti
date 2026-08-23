@@ -86,17 +86,28 @@ nvidia-smi
 
 Expected: `610.88` and `CUDA UMD Version: 13.3` and `16311 MiB`.
 
-### 2. Download llama.cpp
+### 2. Install llama.cpp (b10586 is the commit of the validated release)
 
-`b10586` is the commit of the validated release. Download `llama-b10586-bin-win-cuda-13.3-x64.zip` and `cudart-llama-bin-win-cuda-13.3-x64.zip` from [llama.cpp releases — b10586](https://github.com/ggml-org/llama.cpp/releases/tag/b10586) — or grab `latest` at [releases](https://github.com/ggml-org/llama.cpp/releases). Extract both to `C:\llamacpp`.
+Create the folder:
 
 ```powershell
-Expand-Archive llama-b10586-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
-Expand-Archive cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
-.\llama-server.exe --version
+mkdir C:\llamacpp
 ```
 
-Verify with `.\llama-server.exe --version` — output must contain `GGML_CUDA=1`. If it shows `Vulkan`, the build is incorrect and must be replaced with the CUDA 13.3 package.
+Download from [releases — b10586](https://github.com/ggml-org/llama.cpp/releases/tag/b10586) (or `latest` at [releases](https://github.com/ggml-org/llama.cpp/releases)):
+- `llama-b10586-bin-win-cuda-13.3-x64.zip`
+- `cudart-llama-bin-win-cuda-13.3-x64.zip`
+
+Extract **both** to `C:\llamacpp` (right-click > Extract All, or via PowerShell):
+
+```powershell
+Expand-Archive $HOME\Downloads\llama-b10586-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
+Expand-Archive $HOME\Downloads\cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
+dir C:\llamacpp\llama-server.exe, C:\llamacpp\cudart64_13.dll, C:\llamacpp\cublas64_13.dll
+C:\llamacpp\llama-server.exe --version
+```
+
+Output must contain `GGML_CUDA=1`. If it shows `Vulkan`, the build is incorrect — replace with the CUDA 13.3 package.
 
 ### 3. Download models
 
@@ -104,6 +115,7 @@ Verify with `.\llama-server.exe --version` — output must contain `GGML_CUDA=1`
 mkdir C:\modelos
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
+dir C:\modelos\*.gguf
 ```
 
 ### 4. Run

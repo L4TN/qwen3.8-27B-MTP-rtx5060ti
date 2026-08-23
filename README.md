@@ -88,19 +88,30 @@ Exemplo: `C:\modelos` (fora do repo, como usado nos testes).
 nvidia-smi
 ```
 
-Tem que mostrar `610.88` e `CUDA UMD Version: 13.3` e `16311 MiB`.
+Deve exibir `610.88`, `CUDA UMD Version: 13.3` e `16311 MiB` para a RTX 5060 Ti.
 
-**2. Baixe o llama.cpp**
+**2. Instale o llama.cpp (b10586 é o commit da release validada)**
 
-`b10586` é o commit da release validada. Baixe `llama-b10586-bin-win-cuda-13.3-x64.zip` e `cudart-llama-bin-win-cuda-13.3-x64.zip` em [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases/tag/b10586) — ou pegue a `latest` em [releases](https://github.com/ggml-org/llama.cpp/releases). Extraia ambos para `C:\llamacpp`.
+Crie a pasta:
 
 ```powershell
-Expand-Archive llama-b10586-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
-Expand-Archive cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
-.\llama-server.exe --version
+mkdir C:\llamacpp
 ```
 
-Valide com `.\llama-server.exe --version` — deve constar `GGML_CUDA=1`. Se constar `Vulkan`, o build é incorreto e deve ser substituído pelo pacote CUDA 13.3.
+Baixe em [releases — b10586](https://github.com/ggml-org/llama.cpp/releases/tag/b10586) (ou `latest` em [releases](https://github.com/ggml-org/llama.cpp/releases)):
+- `llama-b10586-bin-win-cuda-13.3-x64.zip`
+- `cudart-llama-bin-win-cuda-13.3-x64.zip`
+
+Extraia **ambos** para `C:\llamacpp` (clique direito > Extrair tudo, ou via PowerShell):
+
+```powershell
+Expand-Archive $HOME\Downloads\llama-b10586-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
+Expand-Archive $HOME\Downloads\cudart-llama-bin-win-cuda-13.3-x64.zip -DestinationPath C:\llamacpp -Force
+dir C:\llamacpp\llama-server.exe, C:\llamacpp\cudart64_13.dll, C:\llamacpp\cublas64_13.dll
+C:\llamacpp\llama-server.exe --version
+```
+
+Deve constar `GGML_CUDA=1`. Se constar `Vulkan`, o pacote está incorreto — substitua pelo build CUDA 13.3.
 
 **3. Baixe os modelos**
 
@@ -108,6 +119,7 @@ Valide com `.\llama-server.exe --version` — deve constar `GGML_CUDA=1`. Se con
 mkdir C:\modelos
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
+dir C:\modelos\*.gguf
 ```
 
 **4. Rode**
