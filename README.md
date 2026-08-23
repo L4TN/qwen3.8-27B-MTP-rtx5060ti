@@ -104,10 +104,10 @@ curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsl
 # curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
 
 # 4. Run — choose one:
-.\run.ps1                          # interactive menu (45K vs 150K)
-# or dedicated scripts (post-install):
-.\scripts\start-iq4-45k.ps1         # High Precision 45K Q8 — 15.9GB
-.\scripts\start-iq3-150k.ps1        # Extended Context 150K Q4 — 15.0GB
+.\run.ps1                          # interactive menu (45K vs 150K sweet spots)
+# or dedicated SAFE scripts (post-install, market standard):
+.\scripts\start-iq4-32k.ps1         # High Precision 32K Q8 — 15.5GB safe (45K max)
+.\scripts\start-iq3-128k.ps1        # Extended Context 128K Q4 — 14.3GB safe (150K sweet spot)
 .\scripts\clear-vram.ps1            # kill server and free VRAM
 
 # 5. Open
@@ -224,8 +224,8 @@ Full step-by-step tutorial (agnostic, no personal data): [docs/tutorial.md](docs
 ├── README.md
 ├── run.ps1 / run.bat            # Interactive menu (45K vs 150K)
 ├── scripts/
-│   ├── start-iq4-45k.ps1/.bat    # High Precision 45K Q8 — 15.9GB
-│   ├── start-iq3-150k.ps1/.bat   # Extended Context 150K Q4 — 15.0GB
+│   ├── start-iq4-32k.ps1/.bat    # High Precision 32K Q8 — 15.5GB safe (45K max)
+│   ├── start-iq3-128k.ps1/.bat   # Extended Context 128K Q4 — 14.3GB safe (150K sweet spot)
 │   ├── clear-vram.ps1/.bat       # Kill server and clear VRAM
 │   └── README.md                 # Post-install usage
 ├── docs/
