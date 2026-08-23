@@ -16,7 +16,7 @@ Dois quants validados, dois KVs testados, todos os contextos com VRAM, prompt e 
 
 | Componente | Versão |
 |---|---|
-| GPU | RTX 5060 Ti 16311 MiB (16.3 GB) |
+| GPU | ASUS RTX 5060 Ti PCIe 5.0 — 16311 MiB (16.3 GB) |
 | Driver | 610.88 |
 | CUDA | 13.3 (UMD) |
 | OS | Windows 11 22H2, PowerShell 5.1 |

@@ -6,7 +6,7 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 
 | Component | Version |
 |---|---|
-| GPU | RTX 5060 Ti 16311 MiB |
+| GPU | ASUS RTX 5060 Ti PCIe 5.0 — 16311 MiB |
 | Driver | 610.88 |
 | CUDA | 13.3 (UMD) |
 | OS | Windows 11 22H2, PowerShell 5.1 |
