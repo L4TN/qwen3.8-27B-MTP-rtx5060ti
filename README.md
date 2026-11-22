@@ -10,7 +10,9 @@
 
 **Rode Qwen3.8-27B em casa, em uma única GPU gamer, a 50+ t/s.** Este repo entrega a configuração validada em hardware real para extrair o máximo da RTX 5060 Ti 16GB com MTP nativo — sem gambiarras, sem estimativas, só números medidos.
 
-Dois quants validados, dois KVs testados, todos os contextos com VRAM, prompt e geração documentados. Escolha qualidade máxima ou contexto gigante e reproduza com um clique.
+Três quants validados, dois KVs testados, todos os contextos com VRAM, prompt e geração documentados. Escolha qualidade máxima ou contexto gigante e reproduza com um clique.
+
+> **Novo (2026-11-22):** o quant **IQ3_XXS 2.88bpw da ByteShape** (9.24 GiB) rende **184K de contexto com KV q4_0** ou **120K com KV q8_0**, mantendo ~51 t/s de geração. Ver [ByteShape IQ3_XXS 2.88bpw](#byteshape-iq3_xxs-288bpw--924-gb-b12633).
 
 ## Ambiente
 
@@ -35,6 +37,7 @@ VRAM total: **16311 MiB**. Limite estável: **~15.9 GB (97-98%)**.
 |---|---|---|---|
 | UD-IQ4_XS | `Qwen3.8-27B-UD-IQ4_XS.gguf` | 14.25 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) |
 | UD-IQ3_XXS | `Qwen3.8-27B-UD-IQ3_XXS.gguf` | 10.9 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
+| **IQ3_XXS 2.88bpw (ByteShape)** | `Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf` | **9.24 GiB** (9,919,481,216 bytes) | [Hugging Face](https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf) |
 
 Exemplo: `C:\modelos` (fora do repo, como usado nos testes).
 
@@ -95,6 +98,35 @@ Grid sistemático em números de mercado `32K/64K/100K/128K/148K` + `limite` + `
 
 > Limite IQ3 Q8 caiu de 110K → 100K após critério prompt <15 t/s; 110K/120K colapsam prompt mas geração mantém ~54 t/s.
 
+### ByteShape IQ3_XXS 2.88bpw — 9.24 GB (b12633)
+
+Modelo: [`Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf`](https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf) — 9,919,481,216 bytes (9.24 GiB), ~0.65 GiB menor que o UD-IQ3_XXS. Esse espaço extra é o que permite 184K de contexto.
+
+Medido com llama.cpp **b12633** (CUDA 13.5), `--load-mode mmap` (RAM do sistema 15.8 GB — sem mmap o modelo não cabe em RAM + VRAM), `--no-mmproj` (sem visão), MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch/ubatch 512`.
+
+**Q4_0** — KV q4_0 (contexto máximo)
+
+| Contexto | VRAM | % | Prompt (1.5K) | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| 160K (163840) | ~14880 MiB | 91.2% | — | — | — | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 163840` |
+| 176K (180224) | ~15150 MiB | 92.9% | — | — | — | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 180224` |
+| **184K (188416) — definitivo** | **15359–15391 MiB** | **94.2%** | **945–1055 t/s** | **51–53 t/s** | **60–64%** | [`start-iq3xxs-2.88bpw-184k-q4.ps1`](scripts/start-iq3xxs-2.88bpw-184k-q4.ps1) |
+| 192K (196608) | ~15600 MiB | 95.6% | — | — | — | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 196608` |
+
+**Q8_0** — KV q8_0 (precisão de KV)
+
+| Contexto | VRAM | % | Prompt (1.5K) | Geração | Draft | Reproduzir |
+|---|---|---|---|---|---|---|
+| **120K (122880) — recomendado** | **15474 MiB** | **94.9%** | **~962 t/s** | **51.2 t/s** | **58.8%** | [`start-iq3xxs-2.88bpw-120k-q8.ps1`](scripts/start-iq3xxs-2.88bpw-120k-q8.ps1) |
+| 124K (126976) — limite prático | 15657 MiB | 96.0% | ~969 t/s | 51.2 t/s | — | `start-iq3xxs-2.88bpw-120k-q8.ps1 -Ctx 126976` |
+| 128K (131072) — arriscado | 15769 MiB | 96.7% | 712–780 t/s | 48–49 t/s | — | `start-iq3xxs-2.88bpw-120k-q8.ps1 -Ctx 131072` |
+
+> **Q4 vs Q8:** geração praticamente idêntica (~51 t/s). Q8 melhora a precisão do KV cache mas custa ~64K de contexto (120K vs 184K). `--ctx-checkpoints 0` **não** reduz VRAM em 128K — checkpoints não são o gargalo, o KV é.
+>
+> **Limites:** Q4 184K deixa ~650 MiB livres (192K usa ~15600 MiB). Q8 128K deixa só ~284 MiB livres e o prompt cai para 712–780 t/s; 124K (~396 MiB) é o limite prático.
+>
+> Startup ~5–6 s com cache quente. Alias: `qwen3.8-27b-iq3xxs` (Q4) / `qwen3.8-27b-iq3xxs-q8` (Q8).
+
 ## Instalação
 
 **1. Verifique o CUDA**
@@ -134,6 +166,7 @@ Deve constar `GGML_CUDA=1`. Se constar `Vulkan`, o pacote está incorreto — su
 mkdir C:\modelos
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
+curl.exe -L -o C:\modelos\Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf
 dir C:\modelos\*.gguf
 ```
 
@@ -151,6 +184,8 @@ Ou direto (exemplos — limites validados):
 .\scripts\start-iq4-90k-q4.ps1   # IQ4 90K Q4 limite (15854 MiB, 100K colapsa)
 .\scripts\start-iq3-160k-q4.ps1  # IQ3 160K Q4 limite (15528 MiB, 170K colapsa prompt)
 .\scripts\start-iq3-100k-q8.ps1  # IQ3 100K Q8 limite (15452 MiB, 110K colapsa)
+.\scripts\start-iq3xxs-2.88bpw-184k-q4.ps1  # ByteShape 184K Q4 (15359-15391 MiB, 51-53 t/s)
+.\scripts\start-iq3xxs-2.88bpw-120k-q8.ps1  # ByteShape 120K Q8 (15474 MiB, 51.2 t/s)
 ```
 
 Demais scripts seguem o padrão `start-iq{quant}-{ctx}-{kv}.ps1` — mercado `32K/64K/100K/128K/148K` + `limite` + `colapso` (ver `scripts/` e `tools/bench-results-v2.csv`).
@@ -176,6 +211,8 @@ scripts/start-iq3-148k-q4.ps1   # Q4 148K 15206 MiB 83/50
 scripts/start-iq3-160k-q4.ps1   # Q4 160K limite 15528 MiB 85/57
 scripts/start-iq3-100k-q8.ps1   # Q8 100K limite 15452 MiB 84/57
 scripts/start-iq3-110k-q8.ps1   # Q8 110K colapso prompt 5.7/53
+scripts/start-iq3xxs-2.88bpw-184k-q4.ps1  # ByteShape Q4 184K limite 15359-15391 MiB 945-1055/51-53
+scripts/start-iq3xxs-2.88bpw-120k-q8.ps1  # ByteShape Q8 120K 15474 MiB 962/51.2
 scripts/clear-vram.ps1
 tools/bench-grid-v2.ps1         # bench sistemático
 docs/tutorial.md
@@ -186,5 +223,6 @@ Cada `.ps1` tem seu `.bat` equivalente. Modelos ficam em `C:\modelos` (fora do r
 ## Referências
 
 - Modelo: [unsloth/Qwen3.8-27B-GGUF](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF)
+- Modelo IQ3_XXS 2.88bpw: [byteshape/Qwen3.8-27B-GGUF](https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf)
 - llama.cpp: https://github.com/ggml-org/llama.cpp
 - Discussão #26: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/discussions/26

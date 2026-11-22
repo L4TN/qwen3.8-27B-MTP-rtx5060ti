@@ -23,6 +23,7 @@ Single-GPU inference of **Qwen3.8-27B** with native MTP. All numbers measured on
 |---|---|---|---|
 | UD-IQ4_XS | `Qwen3.8-27B-UD-IQ4_XS.gguf` | 14.25 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf) |
 | UD-IQ3_XXS | `Qwen3.8-27B-UD-IQ3_XXS.gguf` | 10.9 GB | [Hugging Face](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf) |
+| IQ3_XXS 2.88bpw (ByteShape) | `Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf` | 9.24 GiB | [Hugging Face](https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf) |
 
 Example: `C:\modelos` (outside repo, as used in tests).
 
@@ -85,6 +86,29 @@ Total VRAM: **16311 MiB**. Stable limit **~15.9 GB (97-98%)**.
 
 > Limit IQ3 Q8 moved 110K → 100K after prompt <15 criterion; 110K/120K collapse prompt but gen stays ~54.
 
+### IQ3_XXS 2.88bpw (ByteShape) - 9.24 GB
+
+Model: [`Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf`](https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf) - 9,919,481,216 bytes, ~0.65 GiB smaller than UD-IQ3_XXS. Measured with llama.cpp **b12633** (CUDA 13.5), `--load-mode mmap` (system RAM 15.8 GB), `--no-mmproj`, MTP n=3, `flash-attn on`, `parallel 1`, `threads 6`, `batch/ubatch 512`.
+
+**Q4_0** - KV q4_0 (maximum context)
+
+| Context | VRAM | % | Prompt (1.5K) | Gen | Draft | Reproduce |
+|---|---|---|---|---|---|---|
+| 160K (163840) | ~14880 MiB | 91.2% | - | - | - | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 163840` |
+| 176K (180224) | ~15150 MiB | 92.9% | - | - | - | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 180224` |
+| **184K (188416) - definitive** | **15359-15391 MiB** | **94.2%** | **945-1055 t/s** | **51-53 t/s** | **60-64%** | [`start-iq3xxs-2.88bpw-184k-q4.ps1`](../scripts/start-iq3xxs-2.88bpw-184k-q4.ps1) |
+| 192K (196608) | ~15600 MiB | 95.6% | - | - | - | `start-iq3xxs-2.88bpw-184k-q4.ps1 -Ctx 196608` |
+
+**Q8_0** - KV q8_0 (KV precision)
+
+| Context | VRAM | % | Prompt (1.5K) | Gen | Draft | Reproduce |
+|---|---|---|---|---|---|---|
+| **120K (122880) - recommended** | **15474 MiB** | **94.9%** | **~962 t/s** | **51.2 t/s** | **58.8%** | [`start-iq3xxs-2.88bpw-120k-q8.ps1`](../scripts/start-iq3xxs-2.88bpw-120k-q8.ps1) |
+| 124K (126976) - practical limit | 15657 MiB | 96.0% | ~969 t/s | 51.2 t/s | - | `start-iq3xxs-2.88bpw-120k-q8.ps1 -Ctx 126976` |
+| 128K (131072) - risky | 15769 MiB | 96.7% | 712-780 t/s | 48-49 t/s | - | `start-iq3xxs-2.88bpw-120k-q8.ps1 -Ctx 131072` |
+
+> Q4 vs Q8: generation is effectively identical (~51 t/s). Q8 improves KV precision but costs ~64K of context (120K vs 184K). `--ctx-checkpoints 0` does **not** reduce VRAM at 128K - checkpoints are not the bottleneck, the KV cache is. Startup ~5-6 s with warm cache. Aliases: `qwen3.8-27b-iq3xxs` (Q4) / `qwen3.8-27b-iq3xxs-q8` (Q8).
+
 ## Requirements
 
 - NVIDIA GPU 16.3 GB (RTX 5060 Ti validated; 4080/4090 compatible)
@@ -130,6 +154,7 @@ Output must contain `GGML_CUDA=1`. If it shows `Vulkan`, the build is incorrect 
 mkdir C:\modelos
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ4_XS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ4_XS.gguf
 curl.exe -L -o C:\modelos\Qwen3.8-27B-UD-IQ3_XXS.gguf https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
+curl.exe -L -o C:\modelos\Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf
 dir C:\modelos\*.gguf
 ```
 
@@ -181,6 +206,7 @@ Get-Process llama-server | Stop-Process -Force
 - Model: [unsloth/Qwen3.8-27B-GGUF](https://huggingface.co/unsloth/Qwen3.8-27B-GGUF)
 - IQ4_XS file: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-UD-IQ4_XS.gguf
 - IQ3_XXS file: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-UD-IQ3_XXS.gguf
+- IQ3_XXS 2.88bpw file (ByteShape): https://huggingface.co/byteshape/Qwen3.8-27B-GGUF/blob/main/Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf
 - All quants: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/tree/main
 - llama.cpp: https://github.com/ggml-org/llama.cpp
 - Discussion #26: https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/discussions/26 — hfmiguel, Hackin085, Bellatorius01
