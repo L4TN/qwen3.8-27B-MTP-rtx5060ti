@@ -1,4 +1,6 @@
 # Qwen3.8-27B em 1x RTX 5060 Ti 16GB — Extraia o máximo com MTP nativo
+Apos configurar no windows através do Schedule Tasks/Agendador de Tarefas o start do script (At User Logon (Any)), vamos pegar o ip da maquina em ipconfig, ipv4 adress, com esse ip config vamos alcançar nosso server de AI na mesma rede local Wifi em outro computador (ou podemos disponibilizar para a internet via ngrok)
+
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
