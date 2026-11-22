@@ -1,5 +1,27 @@
 # Qwen3.8-27B em 1x RTX 5060 Ti 16GB — Extraia o máximo com MTP nativo
-
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "local-llama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local llama.cpp",
+      "options": {
+        "baseURL": "http://192.168.15.67:1234/v1",
+        "apiKey": "sk-local"
+      },
+      "models": {
+        "YOUR_EXACT_MODEL_ID": {
+          "name": "Qwen 3.8 27B",
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+  "model": "local-llama/YOUR_EXACT_MODEL_ID"
+}
 <p align="center">
   <img src="https://img.shields.io/badge/Windows%2011-0078D6?style=flat&logo=windows&logoColor=white" />
   <img src="https://img.shields.io/badge/CUDA%2013.3-76B900?style=flat&logo=nvidia&logoColor=white" />
