@@ -4,8 +4,8 @@ REM  Inkling-2-Mini UD-IQ3_XXS  -  stack Unsloth (b12651-mix-c7059d6) + DSpark
 REM  GGUF da RAIZ do repo (NAO usar Mainline_Support/: layout incompativel)
 REM  Alvo: RTX 5060 Ti 16 GB  |  ctx 102400 (100k)  |  DSpark n-max 2
 REM  Uso: start-inkling2-mini-ud-iq3xxs-100k-q8.bat [ctx] [ctk] [ctv] [ubatch] [nmax]
-REM       defaults: 102400  f16  q8_0  128  2
-REM  Escada de KV testada: f16/f16 (344 MiB livres) -> f16/q8_0 (aprovada)
+REM       defaults: 102400  q8_0  q8_0  128  2
+REM  Escada de KV: f16/f16 (344 MiB) -> f16/q8_0 (sem kernel FA) -> q8_0/q8_0 (FA nativo)
 REM ============================================================================
 setlocal
 
@@ -18,7 +18,7 @@ set MODEL_URL=https://huggingface.co/unsloth/Inkling-2-Mini-GGUF/resolve/main/In
 set DRAFT_URL=https://huggingface.co/unsloth/Inkling-2-Mini-GGUF/resolve/main/dspark-Inkling-2-Mini-Q8_0.gguf
 
 set CTX=102400
-set CTK=f16
+set CTK=q8_0
 set CTV=q8_0
 set UBATCH=128
 set NMAX=2
