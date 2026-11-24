@@ -109,6 +109,48 @@ Model: [`Qwen3.8-27B-IQ3_XXS-2.88bpw.gguf`](https://huggingface.co/byteshape/Qwe
 
 > Q4 vs Q8: generation is effectively identical (~51 t/s). Q8 improves KV precision but costs ~64K of context (120K vs 184K). `--ctx-checkpoints 0` does **not** reduce VRAM at 128K - checkpoints are not the bottleneck, the KV cache is. Startup ~5-6 s with warm cache. Aliases: `qwen3.8-27b-iq3xxs` (Q4) / `qwen3.8-27b-iq3xxs-q8` (Q8).
 
+### Inkling-2-Mini UD-IQ3_XXS - 10.86 GB (Unsloth b12651 + DSpark)
+
+Different model family, running on the **Unsloth** stack with the native **DSpark** drafter. Build: [`unslothai/llama.cpp` `b12651-mix-c7059d6`](https://github.com/unslothai/llama.cpp/releases/tag/b12651-mix-c7059d6) (`app-...-windows-x64-cuda13-portable.zip` + `cudart64_13` / `cublas64_13` / `cublasLt64_13` 13.5 DLLs next to the exe — the portable zip does **not** bundle them). GGUFs come from the **root** of [unsloth/Inkling-2-Mini-GGUF](https://huggingface.co/unsloth/Inkling-2-Mini-GGUF); the `Mainline_Support/` subfolder uses a layout this build does not load.
+
+| File | Bytes | Size |
+|---|---|---|
+| `Inkling-2-Mini-UD-IQ3_XXS.gguf` | 11,663,310,784 | 10.86 GiB |
+| `dspark-Inkling-2-Mini-Q8_0.gguf` (drafter) | 503,889,952 | 480 MiB |
+
+Flags: `--spec-type draft-dspark --spec-draft-n-max 2 --spec-draft-n-min 0 --spec-draft-p-min 0`, `--n-gpu-layers all --gpu-layers-draft all`, `--flash-attn on`, `--ctx-checkpoints 32`, `--load-mode mmap --no-mmproj --no-warmup`, `--fit off`, `--parallel 1`, `threads 6`, `batch 512 / ubatch 128`. **No `--spec-draft-device`**: DSpark needs the target's embeddings/LM head on the same GPU.
+
+**KV ladder at 122880** (this is what decided the final config):
+
+| KV K / V | VRAM used | Free | Verdict |
+|---|---|---|---|
+| f16 / f16 | 15967 MiB | 344 MiB | rejected (<350 MiB) |
+| **f16 / q8_0** | **15890 MiB** | **421 MiB** | **approved** |
+| q8_0 / q8_0 | - | - | not needed |
+
+**100k (`102400`) - final config, KV f16/q8_0, ubatch 128:**
+
+| Config | VRAM | Free | Prompt (391 tok) | Gen | Draft |
+|---|---|---|---|---|---|
+| **DSpark n=2** | **15721 MiB (96.4%)** | **590 MiB** | 256.9 t/s | **63.6 t/s** | 45/86 (52.3%) |
+| DSpark n=3 | 15765 MiB (96.6%) | 546 MiB | 254.3 t/s | 58.6 t/s | 49/138 (35.5%) |
+| no drafter | 14628 MiB (89.7%) | 1683 MiB | 346.5 t/s | 61.3 t/s | - |
+
+With a filled context (~59k prompt tokens, still inside 102400) DSpark loses ground: **26.6 t/s** (n=2) and 23.8 t/s (n=3) vs **34.0 t/s** without the drafter - the drafter attends over the whole context on every step.
+
+**DSpark vs context** (n=3, same 120k flags, only `--ctx-size` changes):
+
+| Context | Gen | Draft |
+|---|---|---|
+| 16K (16384) | 69.8 t/s | 62/114 (54.4%) |
+| 32K (32768) | 60.5 t/s | 55/132 (41.7%) |
+| 100K (102400) | 58.6 t/s | 49/138 (35.5%) |
+| 120K (122880) | 24.9 t/s | 56/144 (38.9%) |
+
+> **120k does not hold with DSpark:** at `122880` only 421 MiB stay free and generation collapses to 24.9 t/s (~2.4x slower than without the drafter). At `102400` 590 MiB stay free and DSpark recovers to 63.6 t/s. `--spec-draft-n-max 8` does not help (26.0 t/s at 120k, 54/357). `n-max 2` beats `n-max 3` at 100k (+8.5%) by cutting the batch-verification cost.
+> Alias: `inkling-2-mini-ud-iq3xxs-100k`. Launcher: [`start-inkling2-mini-ud-iq3xxs-100k-q8.bat`](../scripts/start-inkling2-mini-ud-iq3xxs-100k-q8.bat), args `[ctx] [ctk] [ctv] [ubatch] [nmax]` (defaults `102400 f16 q8_0 128 2`), auto-downloads both GGUFs with `curl.exe -L -C -` into `.part`.
+> Versions, hashes, DSpark fix and context curve: [docs/inkling-2-mini.md](inkling-2-mini.md).
+
 ## Requirements
 
 - NVIDIA GPU 16.3 GB (RTX 5060 Ti validated; 4080/4090 compatible)
