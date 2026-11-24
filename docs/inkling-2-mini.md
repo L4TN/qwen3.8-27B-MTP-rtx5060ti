@@ -179,6 +179,7 @@ Bench oficial (`bench-inkling.ps1`, servidor subido pelo `.bat`): **15684 MiB us
 - `--ubatch-size` acima de 128 estoura a VRAM nesta GPU (OOM observado) — manter 128.
 - Prompt t/s varia com o tamanho do prompt (batching): 243–257 t/s com 391 tokens, 489–735 t/s com ~59k.
 - O DSpark é **lossless**: cada token sugerido é validado pelo modelo principal; `--cache-type-k f16` preserva a precisão da atenção.
+- **A folga de VRAM depende do desktop**: os 590–627 MiB livres foram medidos com a máquina limpa. Com Edge/WebView, overlay da NVIDIA App e o próprio app do OpenCode abertos, o total usado sobe para ~15880 MiB e a folga cai para ~175–430 MiB — ainda estável, mas é o primeiro lugar onde aparece OOM. Feche apps de GPU antes de sessões longas.
 
 ## Referências
 
